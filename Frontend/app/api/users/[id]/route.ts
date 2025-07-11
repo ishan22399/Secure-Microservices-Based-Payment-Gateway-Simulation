@@ -1,0 +1,66 @@
+import { type NextRequest, NextResponse } from "next/server";
+
+const BACKEND_URL = process.env.BACKEND_URL || "http://localhost:8080";
+
+export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
+  try {
+    const backendRes = await fetch(`${BACKEND_URL}/api/users/${params.id}`, {
+      method: "GET",
+      headers: {
+        ...(request.headers.get("authorization") && { "authorization": request.headers.get("authorization")! }),
+      },
+    });
+    let data;
+    try {
+      data = await backendRes.json();
+    } catch (e) {
+      data = { error: "Invalid backend response" };
+    }
+    return NextResponse.json(data, { status: backendRes.status });
+  } catch (error) {
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
+}
+
+export async function PATCH(request: NextRequest, { params }: { params: { id: string } }) {
+  try {
+    const body = await request.json();
+    const backendRes = await fetch(`${BACKEND_URL}/api/users/${params.id}`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        ...(request.headers.get("authorization") && { "authorization": request.headers.get("authorization")! }),
+      },
+      body: JSON.stringify(body),
+    });
+    let data;
+    try {
+      data = await backendRes.json();
+    } catch (e) {
+      data = { error: "Invalid backend response" };
+    }
+    return NextResponse.json(data, { status: backendRes.status });
+  } catch (error) {
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
+}
+
+export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
+  try {
+    const backendRes = await fetch(`${BACKEND_URL}/api/users/${params.id}`, {
+      method: "DELETE",
+      headers: {
+        ...(request.headers.get("authorization") && { "authorization": request.headers.get("authorization")! }),
+      },
+    });
+    let data;
+    try {
+      data = await backendRes.json();
+    } catch (e) {
+      data = { error: "Invalid backend response" };
+    }
+    return NextResponse.json(data, { status: backendRes.status });
+  } catch (error) {
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
+}

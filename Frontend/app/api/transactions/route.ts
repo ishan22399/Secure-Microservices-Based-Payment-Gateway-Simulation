@@ -1,90 +1,95 @@
+
 import { type NextRequest, NextResponse } from "next/server"
 
-// Mock transaction data
-const transactions = [
-  {
-    id: "TXN-001",
-    customerId: "1",
-    merchantId: "MERCH_001",
-    merchantName: "Amazon Store",
-    amount: 299.99,
-    currency: "USD",
-    status: "completed",
-    timestamp: "2024-01-10T14:32:15Z",
-    paymentMethod: "Visa ****4532",
-    description: "Online purchase",
-    category: "Shopping",
-  },
-  {
-    id: "TXN-002",
-    customerId: "1",
-    merchantId: "MERCH_002",
-    merchantName: "Netflix",
-    amount: 15.99,
-    currency: "USD",
-    status: "completed",
-    timestamp: "2024-01-09T10:15:30Z",
-    paymentMethod: "Mastercard ****8901",
-    description: "Monthly subscription",
-    category: "Entertainment",
-  },
-  // Add more mock transactions...
-]
+// Backend API base URL (adjust as needed for your environment)
+const BACKEND_URL = process.env.BACKEND_URL || "http://localhost:8080";
 
+// Proxy GET /api/transactions (list, filter, paginate)
 export async function GET(request: NextRequest) {
-  const { searchParams } = new URL(request.url)
-  const userId = searchParams.get("userId")
-  const role = searchParams.get("role")
-  const limit = Number.parseInt(searchParams.get("limit") || "10")
-  const offset = Number.parseInt(searchParams.get("offset") || "0")
-
   try {
-    let filteredTransactions = transactions
-
-    // Filter based on user role and ID
-    if (role === "customer" && userId) {
-      filteredTransactions = transactions.filter((t) => t.customerId === userId)
-    } else if (role === "merchant" && userId) {
-      filteredTransactions = transactions.filter((t) => t.merchantId === userId)
-    }
-    // Bank admins can see all transactions
-
-    // Pagination
-    const paginatedTransactions = filteredTransactions.slice(offset, offset + limit)
-
-    return NextResponse.json({
-      transactions: paginatedTransactions,
-      total: filteredTransactions.length,
-      hasMore: offset + limit < filteredTransactions.length,
-    })
+    const backendUrl = `${BACKEND_URL}/api/transactions${request.url.includes('?') ? request.url.substring(request.url.indexOf("?")) : ''}`;
+    const backendRes = await fetch(backendUrl, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        ...(request.headers.get("authorization") && { "authorization": request.headers.get("authorization")! }),
+      },
+    });
+    const data = await backendRes.json();
+    return NextResponse.json(data, { status: backendRes.status });
   } catch (error) {
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
 
+// Proxy POST /api/transactions (create/initiate transaction)
 export async function POST(request: NextRequest) {
   try {
-    const transactionData = await request.json()
-
-    // Simulate transaction processing
-    const newTransaction = {
-      id: `TXN-${Date.now()}`,
-      ...transactionData,
-      status: "processing",
-      timestamp: new Date().toISOString(),
-    }
-
-    // Simulate processing delay
-    setTimeout(() => {
-      // Update status to completed (in real app, this would be in database)
-      newTransaction.status = Math.random() > 0.1 ? "completed" : "failed"
-    }, 2000)
-
-    return NextResponse.json({
-      transaction: newTransaction,
-      message: "Transaction initiated successfully",
-    })
+    const body = await request.json();
+    const backendRes = await fetch(`${BACKEND_URL}/api/transactions`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...(request.headers.get("authorization") && { "authorization": request.headers.get("authorization")! }),
+      },
+      body: JSON.stringify(body),
+    });
+    const data = await backendRes.json();
+    return NextResponse.json(data, { status: backendRes.status });
   } catch (error) {
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
+}
+
+// Proxy GET /api/transactions/:id (fetch transaction details)
+export async function GET_BY_ID(request: NextRequest, { params }: { params: { id: string } }) {
+  try {
+    const backendRes = await fetch(`${BACKEND_URL}/api/transactions/${params.id}`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        ...(request.headers.get("authorization") && { "authorization": request.headers.get("authorization")! }),
+      },
+    });
+    const data = await backendRes.json();
+    return NextResponse.json(data, { status: backendRes.status });
+  } catch (error) {
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
+}
+
+// Proxy PATCH /api/transactions/:id (update transaction, e.g. for refunds/disputes)
+export async function PATCH(request: NextRequest, { params }: { params: { id: string } }) {
+  try {
+    const body = await request.json();
+    const backendRes = await fetch(`${BACKEND_URL}/api/transactions/${params.id}`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        ...(request.headers.get("authorization") && { "authorization": request.headers.get("authorization")! }),
+      },
+      body: JSON.stringify(body),
+    });
+    const data = await backendRes.json();
+    return NextResponse.json(data, { status: backendRes.status });
+  } catch (error) {
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
+}
+
+// Proxy DELETE /api/transactions/:id (delete/cancel transaction)
+export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
+  try {
+    const backendRes = await fetch(`${BACKEND_URL}/api/transactions/${params.id}`, {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+        ...(request.headers.get("authorization") && { "authorization": request.headers.get("authorization")! }),
+      },
+    });
+    const data = await backendRes.json();
+    return NextResponse.json(data, { status: backendRes.status });
+  } catch (error) {
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

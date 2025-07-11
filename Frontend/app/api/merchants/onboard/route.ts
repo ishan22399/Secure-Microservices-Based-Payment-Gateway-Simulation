@@ -1,14 +1,11 @@
-import { type NextRequest, NextResponse } from "next/server"
+import { type NextRequest, NextResponse } from "next/server";
 
-// Backend API base URL (adjust as needed for your environment)
 const BACKEND_URL = process.env.BACKEND_URL || "http://localhost:8080";
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-
-    // Forward the registration request to the backend
-    const backendRes = await fetch(`${BACKEND_URL}/api/auth/register`, {
+    const backendRes = await fetch(`${BACKEND_URL}/api/merchants/onboard`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -16,8 +13,6 @@ export async function POST(request: NextRequest) {
       },
       body: JSON.stringify(body),
     });
-
-    // Handle backend errors (e.g., validation, duplicate email)
     let data;
     try {
       data = await backendRes.json();

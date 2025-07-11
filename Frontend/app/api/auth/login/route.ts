@@ -1,57 +1,32 @@
+
 import { type NextRequest, NextResponse } from "next/server"
 
-// Mock user database
-const users = [
-  {
-    id: "1",
-    email: "customer@demo.com",
-    password: "demo123",
-    name: "John Customer",
-    role: "customer",
-    permissions: ["view_transactions", "make_payments"],
-  },
-  {
-    id: "2",
-    email: "merchant@demo.com",
-    password: "demo123",
-    name: "Jane Merchant",
-    role: "merchant",
-    merchantId: "MERCH_001",
-    permissions: ["view_transactions", "manage_payments", "view_analytics"],
-  },
-  {
-    id: "3",
-    email: "admin@demo.com",
-    password: "demo123",
-    name: "Admin User",
-    role: "bank_admin",
-    bankId: "BANK_001",
-    permissions: ["full_access", "manage_users", "system_admin"],
-  },
-]
+// Backend API base URL (adjust as needed for your environment)
+const BACKEND_URL = process.env.BACKEND_URL || "http://localhost:8080";
 
 export async function POST(request: NextRequest) {
   try {
-    const { email, password } = await request.json()
+    const body = await request.json();
 
-    // Find user
-    const user = users.find((u) => u.email === email && u.password === password)
+    // Forward the login request to the backend
+    const backendRes = await fetch(`${BACKEND_URL}/api/auth/login`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...(request.headers.get("authorization") && { "authorization": request.headers.get("authorization")! }),
+      },
+      body: JSON.stringify(body),
+    });
 
-    if (!user) {
-      return NextResponse.json({ error: "Invalid credentials" }, { status: 401 })
+    // Handle backend errors (e.g., invalid credentials, locked account)
+    let data;
+    try {
+      data = await backendRes.json();
+    } catch (e) {
+      data = { error: "Invalid backend response" };
     }
-
-    // Generate mock JWT token
-    const token = `mock_jwt_token_${user.id}_${Date.now()}`
-
-    // Return user data (excluding password)
-    const { password: _, ...userWithoutPassword } = user
-
-    return NextResponse.json({
-      user: userWithoutPassword,
-      token,
-    })
+    return NextResponse.json(data, { status: backendRes.status });
   } catch (error) {
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
