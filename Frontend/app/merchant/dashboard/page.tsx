@@ -16,11 +16,12 @@ import {
   User,
   DollarSign,
   TrendingUp,
-  Activity,
+  Users,
+  BarChart3,
   Plus,
   Download,
-  BarChart3,
-  Code,
+  Eye,
+  ArrowDownRight,
 } from "lucide-react"
 
 export default function MerchantDashboard() {
@@ -37,47 +38,46 @@ export default function MerchantDashboard() {
     { name: "Dashboard", href: "/merchant/dashboard", icon: Home, current: true },
     { name: "Transactions", href: "/merchant/transactions", icon: History },
     { name: "Analytics", href: "/merchant/analytics", icon: BarChart3 },
-    { name: "Payment Links", href: "/merchant/payment-links", icon: CreditCard },
-    { name: "API Integration", href: "/merchant/integration", icon: Code },
-    { name: "Profile", href: "/merchant/profile", icon: User },
+    { name: "Customers", href: "/merchant/customers", icon: Users },
     { name: "Settings", href: "/merchant/settings", icon: Settings },
+    { name: "Profile", href: "/merchant/profile", icon: User },
   ]
 
   const stats = [
     {
       title: "Total Revenue",
-      value: "$24,847.50",
-      change: "+12.5%",
+      value: "$45,231.89",
+      change: "+20.1%",
       icon: DollarSign,
       color: "text-green-600",
     },
     {
-      title: "This Month",
-      value: "$4,567.80",
-      change: "+8.2%",
-      icon: TrendingUp,
+      title: "Transactions",
+      value: "2,350",
+      change: "+15.3%",
+      icon: CreditCard,
       color: "text-blue-600",
     },
     {
-      title: "Transactions",
-      value: "1,247",
-      change: "+15.3%",
-      icon: CreditCard,
+      title: "Success Rate",
+      value: "98.5%",
+      change: "+2.1%",
+      icon: TrendingUp,
       color: "text-purple-600",
     },
     {
-      title: "Success Rate",
-      value: "99.2%",
-      change: "+0.5%",
-      icon: Activity,
-      color: "text-green-600",
+      title: "Active Customers",
+      value: "1,234",
+      change: "+12.5%",
+      icon: Users,
+      color: "text-orange-600",
     },
   ]
 
   const recentTransactions = [
     {
       id: "TXN-001",
-      customer: "john.doe@email.com",
+      customer: "John Doe",
       amount: 299.99,
       status: "completed",
       date: "2024-01-10",
@@ -85,27 +85,27 @@ export default function MerchantDashboard() {
     },
     {
       id: "TXN-002",
-      customer: "jane.smith@email.com",
-      amount: 89.99,
+      customer: "Jane Smith",
+      amount: 156.5,
       status: "completed",
       date: "2024-01-10",
       paymentMethod: "Mastercard ****8901",
     },
     {
       id: "TXN-003",
-      customer: "bob.wilson@email.com",
-      amount: 156.5,
+      customer: "Bob Johnson",
+      amount: 89.99,
       status: "pending",
       date: "2024-01-10",
       paymentMethod: "Apple Pay",
     },
     {
       id: "TXN-004",
-      customer: "alice.brown@email.com",
-      amount: 45.0,
-      status: "failed",
+      customer: "Alice Brown",
+      amount: 234.75,
+      status: "completed",
       date: "2024-01-09",
-      paymentMethod: "Visa ****2345",
+      paymentMethod: "Visa ****1234",
     },
   ]
 
@@ -132,7 +132,7 @@ export default function MerchantDashboard() {
         {/* Welcome Section */}
         <div className="bg-gradient-to-r from-green-500 to-blue-600 rounded-lg p-6 text-white">
           <h1 className="text-2xl font-bold mb-2">Welcome back, {user?.name}!</h1>
-          <p className="text-green-100">Manage your payments and grow your business with our secure platform.</p>
+          <p className="text-green-100">Manage your business payments and track your revenue growth.</p>
         </div>
 
         {/* Stats Grid */}
@@ -163,18 +163,10 @@ export default function MerchantDashboard() {
             <CardContent className="space-y-4">
               <Button
                 className="w-full justify-start bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700"
-                onClick={() => router.push("/merchant/payment-links")}
+                onClick={() => router.push("/merchant/payment-link")}
               >
                 <Plus className="mr-2 h-4 w-4" />
                 Create Payment Link
-              </Button>
-              <Button
-                variant="outline"
-                className="w-full justify-start bg-transparent"
-                onClick={() => router.push("/merchant/transactions")}
-              >
-                <History className="mr-2 h-4 w-4" />
-                View All Transactions
               </Button>
               <Button
                 variant="outline"
@@ -184,50 +176,40 @@ export default function MerchantDashboard() {
                 <BarChart3 className="mr-2 h-4 w-4" />
                 View Analytics
               </Button>
-              <Button variant="outline" className="w-full justify-start bg-transparent">
+              <Button
+                variant="outline"
+                className="w-full justify-start bg-transparent"
+                onClick={() => router.push("/merchant/transactions")}
+              >
                 <Download className="mr-2 h-4 w-4" />
-                Export Reports
+                Export Transactions
               </Button>
             </CardContent>
           </Card>
 
-          {/* Performance Metrics */}
+          {/* Revenue Chart */}
           <Card>
             <CardHeader>
-              <CardTitle>Performance Metrics</CardTitle>
-              <CardDescription>Your business performance overview</CardDescription>
+              <CardTitle>Revenue Overview</CardTitle>
+              <CardDescription>Last 7 days</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span>Success Rate</span>
-                  <span className="font-medium">99.2%</span>
-                </div>
-                <Progress value={99.2} className="h-2" />
-              </div>
-              <div className="space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span>Customer Satisfaction</span>
-                  <span className="font-medium">96.8%</span>
-                </div>
-                <Progress value={96.8} className="h-2" />
-              </div>
-              <div className="space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span>Average Response Time</span>
-                  <span className="font-medium">1.2s</span>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm">Today</span>
+                  <span className="font-semibold">$2,847.50</span>
                 </div>
                 <Progress value={85} className="h-2" />
-              </div>
-              <div className="grid grid-cols-2 gap-4 mt-4">
-                <div className="text-center p-3 bg-green-50 rounded-lg">
-                  <div className="text-2xl font-bold text-green-600">847</div>
-                  <div className="text-xs text-green-700">Active Customers</div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm">Yesterday</span>
+                  <span className="font-semibold">$2,234.80</span>
                 </div>
-                <div className="text-center p-3 bg-blue-50 rounded-lg">
-                  <div className="text-2xl font-bold text-blue-600">$127</div>
-                  <div className="text-xs text-blue-700">Avg Transaction</div>
+                <Progress value={67} className="h-2" />
+                <div className="flex items-center justify-between">
+                  <span className="text-sm">This Week</span>
+                  <span className="font-semibold">$18,456.90</span>
                 </div>
+                <Progress value={92} className="h-2" />
               </div>
             </CardContent>
           </Card>
@@ -242,6 +224,7 @@ export default function MerchantDashboard() {
                 <CardDescription>Latest payment activity</CardDescription>
               </div>
               <Button variant="outline" onClick={() => router.push("/merchant/transactions")}>
+                <Eye className="mr-2 h-4 w-4" />
                 View All
               </Button>
             </div>
@@ -251,8 +234,8 @@ export default function MerchantDashboard() {
               {recentTransactions.map((transaction) => (
                 <div key={transaction.id} className="flex items-center justify-between p-4 border rounded-lg">
                   <div className="flex items-center space-x-4">
-                    <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center">
-                      <CreditCard className="h-5 w-5 text-gray-600" />
+                    <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+                      <ArrowDownRight className="h-5 w-5 text-green-600" />
                     </div>
                     <div>
                       <p className="font-medium">{transaction.customer}</p>
@@ -262,7 +245,7 @@ export default function MerchantDashboard() {
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className="font-semibold">${transaction.amount.toFixed(2)}</p>
+                    <p className="font-semibold text-green-600">+${transaction.amount.toFixed(2)}</p>
                     {getStatusBadge(transaction.status)}
                   </div>
                 </div>
@@ -271,28 +254,38 @@ export default function MerchantDashboard() {
           </CardContent>
         </Card>
 
-        {/* Revenue Chart Placeholder */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Revenue Overview</CardTitle>
-            <CardDescription>Monthly revenue trends</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="h-64 bg-gray-50 rounded-lg flex items-center justify-center">
-              <div className="text-center">
-                <BarChart3 className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <p className="text-gray-500">Revenue chart will be displayed here</p>
-                <Button
-                  variant="outline"
-                  className="mt-2 bg-transparent"
-                  onClick={() => router.push("/merchant/analytics")}
-                >
-                  View Detailed Analytics
-                </Button>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        {/* Business Insights */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Peak Hours</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">2-4 PM</div>
+              <p className="text-sm text-gray-500">Highest transaction volume</p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Top Payment Method</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">Visa</div>
+              <p className="text-sm text-gray-500">45% of all transactions</p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Average Order</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">$127.50</div>
+              <p className="text-sm text-gray-500">+8% from last month</p>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </DashboardLayout>
   )

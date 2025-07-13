@@ -1,23 +1,36 @@
-import { type NextRequest, NextResponse } from "next/server";
+import { type NextRequest, NextResponse } from "next/server"
 
-const BACKEND_URL = process.env.BACKEND_URL || "http://localhost:8080";
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL
+
+if (!API_BASE_URL) {
+  throw new Error("NEXT_PUBLIC_API_BASE_URL is not defined in environment variables.")
+}
 
 export async function POST(request: NextRequest) {
   try {
-    const backendRes = await fetch(`${BACKEND_URL}/api/auth/logout`, {
+    const body = await request.json()
+    const backendRes = await fetch(`${API_BASE_URL}/logout`, {
       method: "POST",
       headers: {
-        ...(request.headers.get("authorization") && { "authorization": request.headers.get("authorization")! }),
+        "Content-Type": "application/json",
       },
-    });
-    let data;
-    try {
-      data = await backendRes.json();
-    } catch (e) {
-      data = { error: "Invalid backend response" };
+      body: JSON.stringify(body),
+    })
+    const data = await backendRes.json()
+    const response = NextResponse.json(data, { status: backendRes.status })
+
+    // If backend logout is successful, clear auth_token cookie
+    if (backendRes.ok) {
+      response.cookies.set("auth_token", "", {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "strict",
+        maxAge: 0,
+      })
     }
-    return NextResponse.json(data, { status: backendRes.status });
+
+    return response
   } catch (error) {
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    return NextResponse.json({ error: "Failed to logout" }, { status: 500 })
   }
 }

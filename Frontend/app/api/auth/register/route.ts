@@ -1,31 +1,32 @@
 import { type NextRequest, NextResponse } from "next/server"
 
-// Backend API base URL (adjust as needed for your environment)
-const BACKEND_URL = process.env.BACKEND_URL || "http://localhost:8080";
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL
+
+if (!API_BASE_URL) {
+  throw new Error("NEXT_PUBLIC_API_BASE_URL is not defined in environment variables.")
+}
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
-
-    // Forward the registration request to the backend
-    const backendRes = await fetch(`${BACKEND_URL}/api/auth/register`, {
+    const body = await request.json()
+    console.debug("[API] /api/auth/register received body:", body)
+    const backendRes = await fetch(`${API_BASE_URL}/api/auth/register`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        ...(request.headers.get("authorization") && { "authorization": request.headers.get("authorization")! }),
       },
       body: JSON.stringify(body),
-    });
-
-    // Handle backend errors (e.g., validation, duplicate email)
-    let data;
+    })
+    let data = null
     try {
-      data = await backendRes.json();
+      data = await backendRes.clone().json()
+      console.debug("[API] /api/auth/register backend response:", data)
     } catch (e) {
-      data = { error: "Invalid backend response" };
+      console.debug("[API] /api/auth/register backend response not JSON or empty.")
     }
-    return NextResponse.json(data, { status: backendRes.status });
+    return NextResponse.json(data, { status: backendRes.status })
   } catch (error) {
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    console.error("[API] /api/auth/register error:", error)
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }

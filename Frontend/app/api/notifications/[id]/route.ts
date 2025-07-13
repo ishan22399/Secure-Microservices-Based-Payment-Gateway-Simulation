@@ -1,66 +1,45 @@
-import { type NextRequest, NextResponse } from "next/server";
 
-const BACKEND_URL = process.env.BACKEND_URL || "http://localhost:8080";
 
-export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
-  try {
-    const backendRes = await fetch(`${BACKEND_URL}/api/notifications/${params.id}`, {
-      method: "GET",
-      headers: {
-        ...(request.headers.get("authorization") && { "authorization": request.headers.get("authorization")! }),
-      },
-    });
-    let data;
-    try {
-      data = await backendRes.json();
-    } catch (e) {
-      data = { error: "Invalid backend response" };
-    }
-    return NextResponse.json(data, { status: backendRes.status });
-  } catch (error) {
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
-  }
+import { type NextRequest, NextResponse } from "next/server"
+
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL
+
+if (!API_BASE_URL) {
+  throw new Error("NEXT_PUBLIC_API_BASE_URL is not defined in environment variables.")
 }
 
-export async function PATCH(request: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
   try {
-    const body = await request.json();
-    const backendRes = await fetch(`${BACKEND_URL}/api/notifications/${params.id}`, {
-      method: "PATCH",
+    const notificationId = params.id
+    const body = await request.json()
+    const url = `${API_BASE_URL}/notifications/${notificationId}`
+    const backendRes = await fetch(url, {
+      method: "PUT",
       headers: {
         "Content-Type": "application/json",
-        ...(request.headers.get("authorization") && { "authorization": request.headers.get("authorization")! }),
       },
       body: JSON.stringify(body),
-    });
-    let data;
-    try {
-      data = await backendRes.json();
-    } catch (e) {
-      data = { error: "Invalid backend response" };
-    }
-    return NextResponse.json(data, { status: backendRes.status });
+    })
+    const data = await backendRes.json()
+    return NextResponse.json(data, { status: backendRes.status })
   } catch (error) {
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    return NextResponse.json({ error: "Failed to update notification" }, { status: 500 })
   }
 }
 
 export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
   try {
-    const backendRes = await fetch(`${BACKEND_URL}/api/notifications/${params.id}`, {
+    const notificationId = params.id
+    const url = `${API_BASE_URL}/notifications/${notificationId}`
+    const backendRes = await fetch(url, {
       method: "DELETE",
       headers: {
-        ...(request.headers.get("authorization") && { "authorization": request.headers.get("authorization")! }),
+        "Content-Type": "application/json",
       },
-    });
-    let data;
-    try {
-      data = await backendRes.json();
-    } catch (e) {
-      data = { error: "Invalid backend response" };
-    }
-    return NextResponse.json(data, { status: backendRes.status });
+    })
+    const data = await backendRes.json()
+    return NextResponse.json(data, { status: backendRes.status })
   } catch (error) {
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    return NextResponse.json({ error: "Failed to delete notification" }, { status: 500 })
   }
 }

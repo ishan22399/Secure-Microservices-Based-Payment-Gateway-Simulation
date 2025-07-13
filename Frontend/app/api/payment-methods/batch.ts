@@ -1,73 +1,24 @@
-import { type NextRequest, NextResponse } from "next/server";
+import { type NextRequest, NextResponse } from "next/server"
 
-const BACKEND_URL = process.env.BACKEND_URL || "http://localhost:8080";
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL
 
-// Batch create or update payment methods
-export async function PUT(request: NextRequest) {
-  try {
-    const body = await request.json();
-    const backendRes = await fetch(`${BACKEND_URL}/api/payment-methods/batch`, {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-        ...(request.headers.get("authorization") && { "authorization": request.headers.get("authorization")! }),
-      },
-      body: JSON.stringify(body),
-    });
-    let data;
-    try {
-      data = await backendRes.json();
-    } catch (e) {
-      data = { error: "Invalid backend response" };
-    }
-    return NextResponse.json(data, { status: backendRes.status });
-  } catch (error) {
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
-  }
+if (!API_BASE_URL) {
+  throw new Error("NEXT_PUBLIC_API_BASE_URL is not defined in environment variables.")
 }
 
-// Search payment methods
-export async function SEARCH(request: NextRequest) {
+export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
-    const backendRes = await fetch(`${BACKEND_URL}/api/payment-methods/search`, {
+    const body = await request.json()
+    const backendRes = await fetch(`${API_BASE_URL}/payment-methods/batch`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        ...(request.headers.get("authorization") && { "authorization": request.headers.get("authorization")! }),
       },
       body: JSON.stringify(body),
-    });
-    let data;
-    try {
-      data = await backendRes.json();
-    } catch (e) {
-      data = { error: "Invalid backend response" };
-    }
-    return NextResponse.json(data, { status: backendRes.status });
+    })
+    const data = await backendRes.json()
+    return NextResponse.json(data, { status: backendRes.status })
   } catch (error) {
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
-  }
-}
-
-// Export payment methods
-export async function EXPORT(request: NextRequest) {
-  try {
-    const backendRes = await fetch(`${BACKEND_URL}/api/payment-methods/export`, {
-      method: "GET",
-      headers: {
-        ...(request.headers.get("authorization") && { "authorization": request.headers.get("authorization")! }),
-      },
-    });
-    const blob = await backendRes.blob();
-    return new NextResponse(blob, {
-      status: backendRes.status,
-      headers: {
-        "Content-Type": backendRes.headers.get("Content-Type") || "application/octet-stream",
-        "Content-Disposition": backendRes.headers.get("Content-Disposition") || "attachment; filename=payment_methods_export.csv"
-      }
-    });
-  } catch (error) {
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    return NextResponse.json({ error: "Failed to process batch operation" }, { status: 500 })
   }
 }

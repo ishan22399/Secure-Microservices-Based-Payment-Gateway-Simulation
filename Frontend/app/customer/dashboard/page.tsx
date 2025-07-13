@@ -22,16 +22,96 @@ import {
   ArrowDownRight,
 } from "lucide-react"
 
+import { apiFetch } from "@/lib/api"
 export default function CustomerDashboard() {
   const { user, isLoading } = useAuth()
   const router = useRouter()
-  const [transactions, setTransactions] = useState([])
+  const [stats, setStats] = useState<any[]>([])
+  const [recentTransactions, setRecentTransactions] = useState<any[]>([])
+  const [paymentMethods, setPaymentMethods] = useState<any[]>([])
 
   useEffect(() => {
     if (!isLoading && (!user || user.role !== "customer")) {
       router.push("/auth/login")
     }
   }, [user, isLoading, router])
+
+  useEffect(() => {
+    if (!user || user.role !== "customer") return
+
+    // Fetch stats and recent transactions
+    const fetchDashboardData = async () => {
+      try {
+        // Fetch transactions
+        const txRes = await apiFetch(`/transactions?userId=${user.id}&role=customer&limit=5`)
+        const txData = await txRes.json()
+        setRecentTransactions(
+          (txData.transactions || []).map((t: any) => ({
+            id: t.id,
+            merchant: t.merchantName,
+            amount: -Math.abs(t.amount),
+            status: t.status,
+            date: t.timestamp ? t.timestamp.split("T")[0] : "",
+            category: t.category,
+          }))
+        )
+
+        // Calculate stats
+        const totalSpent = txData.transactions?.reduce((sum: number, t: any) => sum + (t.amount || 0), 0) || 0
+        const thisMonthSpent = txData.transactions?.filter((t: any) => {
+          const d = new Date(t.timestamp)
+          const now = new Date()
+          return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear()
+        }).reduce((sum: number, t: any) => sum + (t.amount || 0), 0) || 0
+        setStats([
+          {
+            title: "Total Spent",
+            value: `$${totalSpent.toFixed(2)}`,
+            change: "+0%",
+            icon: DollarSign,
+            color: "text-green-600",
+          },
+          {
+            title: "This Month",
+            value: `$${thisMonthSpent.toFixed(2)}`,
+            change: "+0%",
+            icon: TrendingUp,
+            color: "text-blue-600",
+          },
+          {
+            title: "Transactions",
+            value: `${txData.transactions?.length || 0}`,
+            change: "+0%",
+            icon: CreditCard,
+            color: "text-purple-600",
+          },
+          {
+            title: "Security Score",
+            value: "98%",
+            change: "+2%",
+            icon: Shield,
+            color: "text-green-600",
+          },
+        ])
+
+        // Fetch payment methods
+        const pmRes = await apiFetch(`/payment-methods?userId=${user.id}`)
+        const pmData = await pmRes.json()
+        setPaymentMethods(
+          (pmData.paymentMethods || []).map((pm: any) => ({
+            id: pm.id,
+            type: pm.cardType || pm.type,
+            last4: pm.last4,
+            expiry: pm.expiryMonth && pm.expiryYear ? `${pm.expiryMonth.toString().padStart(2, "0")}/${pm.expiryYear}` : "",
+            isDefault: pm.isDefault,
+          }))
+        )
+      } catch (e) {
+        // Handle error
+      }
+    }
+    fetchDashboardData()
+  }, [user])
 
   const navigation = [
     { name: "Dashboard", href: "/customer/dashboard", icon: Home, current: true },
@@ -40,89 +120,6 @@ export default function CustomerDashboard() {
     { name: "Payment Methods", href: "/customer/payment-methods", icon: CreditCard },
     { name: "Profile", href: "/customer/profile", icon: User },
     { name: "Settings", href: "/customer/settings", icon: Settings },
-  ]
-
-  const stats = [
-    {
-      title: "Total Spent",
-      value: "$2,847.50",
-      change: "+12.5%",
-      icon: DollarSign,
-      color: "text-green-600",
-    },
-    {
-      title: "This Month",
-      value: "$456.80",
-      change: "+8.2%",
-      icon: TrendingUp,
-      color: "text-blue-600",
-    },
-    {
-      title: "Transactions",
-      value: "47",
-      change: "+15.3%",
-      icon: CreditCard,
-      color: "text-purple-600",
-    },
-    {
-      title: "Security Score",
-      value: "98%",
-      change: "+2%",
-      icon: Shield,
-      color: "text-green-600",
-    },
-  ]
-
-  const recentTransactions = [
-    {
-      id: "TXN-001",
-      merchant: "Amazon Store",
-      amount: -299.99,
-      status: "completed",
-      date: "2024-01-10",
-      category: "Shopping",
-    },
-    {
-      id: "TXN-002",
-      merchant: "Netflix",
-      amount: -15.99,
-      status: "completed",
-      date: "2024-01-09",
-      category: "Entertainment",
-    },
-    {
-      id: "TXN-003",
-      merchant: "Starbucks",
-      amount: -8.75,
-      status: "completed",
-      date: "2024-01-09",
-      category: "Food & Drink",
-    },
-    {
-      id: "TXN-004",
-      merchant: "Uber",
-      amount: -24.5,
-      status: "completed",
-      date: "2024-01-08",
-      category: "Transportation",
-    },
-  ]
-
-  const paymentMethods = [
-    {
-      id: "1",
-      type: "Visa",
-      last4: "4532",
-      expiry: "12/25",
-      isDefault: true,
-    },
-    {
-      id: "2",
-      type: "Mastercard",
-      last4: "8901",
-      expiry: "08/26",
-      isDefault: false,
-    },
   ]
 
   if (isLoading) {
@@ -320,4 +317,6 @@ export default function CustomerDashboard() {
       </div>
     </DashboardLayout>
   )
+// ...existing code...
+
 }

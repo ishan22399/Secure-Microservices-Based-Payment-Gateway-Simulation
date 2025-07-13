@@ -1,233 +1,262 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useState, useEffect } from "react"
 import { useAuth } from "@/contexts/auth-context"
-import { useRouter } from "next/navigation"
 import DashboardLayout from "@/components/layout/dashboard-layout"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
-import { Select } from "@/components/ui/select"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { Label } from "@/components/ui/label"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import {
-  Home,
-  Users,
-  CreditCard,
-  Settings,
-  User,
-  Search,
-  Plus,
-  MoreHorizontal,
-  Edit,
-  Trash2,
-  Shield,
-  Ban,
-  CheckCircle,
-  Server,
-  BarChart3,
-} from "lucide-react"
+import { Users, Search, Plus, Edit, Trash2, Shield, Download } from "lucide-react"
+import { apiFetch } from "@/lib/api"
 
-export default function AdminUsers() {
-  const { user, isLoading } = useAuth()
-  const router = useRouter()
+interface User {
+  id: string
+  name: string
+  email: string
+  role: "customer" | "merchant" | "bank_admin"
+  status: "active" | "inactive" | "suspended"
+  createdAt: string
+  lastLogin?: string
+  avatar?: string
+  phone?: string
+  verified: boolean
+  permissions: string[]
+}
+
+export default function AdminUsersPage() {
+  const { user } = useAuth()
+  const [users, setUsers] = useState<User[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [searchTerm, setSearchTerm] = useState("")
   const [roleFilter, setRoleFilter] = useState("all")
   const [statusFilter, setStatusFilter] = useState("all")
-
-  useEffect(() => {
-    if (!isLoading && (!user || user.role !== "bank_admin")) {
-      router.push("/auth/login")
-    }
-  }, [user, isLoading, router])
+  const [selectedUser, setSelectedUser] = useState<User | null>(null)
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false)
 
   const navigation = [
-    { name: "Dashboard", href: "/admin/dashboard", icon: Home },
-    { name: "User Management", href: "/admin/users", icon: Users, current: true },
-    { name: "Transactions", href: "/admin/transactions", icon: CreditCard },
-    { name: "System Monitor", href: "/admin/system", icon: Server },
+    { name: "Dashboard", href: "/admin/dashboard", icon: Shield },
+    { name: "Users", href: "/admin/users", icon: Users, current: true },
+    { name: "Transactions", href: "/admin/transactions", icon: Shield },
     { name: "Security", href: "/admin/security", icon: Shield },
-    { name: "Analytics", href: "/admin/analytics", icon: BarChart3 },
-    { name: "Profile", href: "/admin/profile", icon: User },
-    { name: "Settings", href: "/admin/settings", icon: Settings },
+    { name: "System", href: "/admin/system", icon: Shield },
+    { name: "Analytics", href: "/admin/analytics", icon: Shield },
+    { name: "Settings", href: "/admin/settings", icon: Shield },
   ]
 
-  const users = [
-    {
-      id: "1",
-      name: "John Customer",
-      email: "john.customer@email.com",
-      role: "customer",
-      status: "active",
-      joinDate: "2023-06-15",
-      lastLogin: "2024-01-10 14:32",
-      transactions: 47,
-      totalSpent: 2847.5,
-      avatar: "/placeholder.svg?height=40&width=40",
-    },
-    {
-      id: "2",
-      name: "Jane Merchant",
-      email: "jane.merchant@business.com",
-      role: "merchant",
-      status: "active",
-      joinDate: "2023-08-22",
-      lastLogin: "2024-01-10 12:15",
-      transactions: 1247,
-      totalRevenue: 24847.5,
-      avatar: "/placeholder.svg?height=40&width=40",
-    },
-    {
-      id: "3",
-      name: "Bob Wilson",
-      email: "bob.wilson@email.com",
-      role: "customer",
-      status: "suspended",
-      joinDate: "2023-12-05",
-      lastLogin: "2024-01-08 16:45",
-      transactions: 12,
-      totalSpent: 456.8,
-      avatar: "/placeholder.svg?height=40&width=40",
-    },
-    {
-      id: "4",
-      name: "Alice Store",
-      email: "alice@alicestore.com",
-      role: "merchant",
-      status: "pending",
-      joinDate: "2024-01-05",
-      lastLogin: "2024-01-09 10:30",
-      transactions: 5,
-      totalRevenue: 234.75,
-      avatar: "/placeholder.svg?height=40&width=40",
-    },
-    {
-      id: "5",
-      name: "Charlie Davis",
-      email: "charlie.davis@email.com",
-      role: "customer",
-      status: "active",
-      joinDate: "2023-09-18",
-      lastLogin: "2024-01-10 09:20",
-      transactions: 89,
-      totalSpent: 5432.1,
-      avatar: "/placeholder.svg?height=40&width=40",
-    },
-    {
-      id: "6",
-      name: "Diana Admin",
-      email: "diana.admin@bank.com",
-      role: "bank_admin",
-      status: "active",
-      joinDate: "2023-01-10",
-      lastLogin: "2024-01-10 15:45",
-      transactions: 0,
-      totalSpent: 0,
-      avatar: "/placeholder.svg?height=40&width=40",
-    },
-  ]
-
-  const getRoleBadge = (role: string) => {
-    const variants = {
-      customer: "bg-blue-100 text-blue-800",
-      merchant: "bg-green-100 text-green-800",
-      bank_admin: "bg-purple-100 text-purple-800",
+  useEffect(() => {
+    if (user?.id && user?.role === "bank_admin") {
+      fetchUsers()
     }
-    return <Badge className={variants[role as keyof typeof variants]}>{role.replace("_", " ")}</Badge>
+  }, [user?.id, user?.role])
+
+  const fetchUsers = async () => {
+    try {
+      setLoading(true)
+      setError(null)
+      const response = await apiFetch("/api/admin/users")
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch users")
+      }
+
+      const data = await response.json()
+      setUsers(data.users || mockUsers)
+    } catch (error) {
+      console.error("Failed to fetch users:", error)
+      setError(error instanceof Error ? error.message : "Failed to fetch users")
+      setUsers(mockUsers)
+    } finally {
+      setLoading(false)
+    }
   }
 
-  const getStatusBadge = (status: string) => {
-    const variants = {
-      active: "bg-green-100 text-green-800",
-      suspended: "bg-red-100 text-red-800",
-      pending: "bg-yellow-100 text-yellow-800",
+  const mockUsers: User[] = [
+    {
+      id: "user_001",
+      name: "John Doe",
+      email: "john@example.com",
+      role: "customer",
+      status: "active",
+      createdAt: "2024-01-15T10:30:00Z",
+      lastLogin: "2024-01-20T09:15:00Z",
+      phone: "+1 (555) 123-4567",
+      verified: true,
+      permissions: ["read", "write"],
+    },
+    {
+      id: "user_002",
+      name: "Jane Smith",
+      email: "jane@business.com",
+      role: "merchant",
+      status: "active",
+      createdAt: "2024-01-10T14:20:00Z",
+      lastLogin: "2024-01-19T16:45:00Z",
+      phone: "+1 (555) 987-6543",
+      verified: true,
+      permissions: ["read", "write", "manage_transactions"],
+    },
+    {
+      id: "user_003",
+      name: "Bob Johnson",
+      email: "bob@company.com",
+      role: "customer",
+      status: "suspended",
+      createdAt: "2024-01-08T11:00:00Z",
+      lastLogin: "2024-01-18T13:30:00Z",
+      phone: "+1 (555) 456-7890",
+      verified: false,
+      permissions: ["read"],
+    },
+  ]
+
+  const handleDeleteUser = async (userId: string) => {
+    try {
+      const response = await apiFetch(`/api/admin/users/${userId}`, {
+        method: "DELETE",
+      })
+
+      if (response.ok) {
+        setUsers(users.filter((u) => u.id !== userId))
+      }
+    } catch (error) {
+      console.error("Failed to delete user:", error)
     }
-    return <Badge className={variants[status as keyof typeof variants]}>{status}</Badge>
+  }
+
+  const handleUpdateUserStatus = async (userId: string, status: "active" | "inactive" | "suspended") => {
+    try {
+      const response = await apiFetch(`/api/admin/users/${userId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status }),
+      })
+
+      if (response.ok) {
+        setUsers(users.map((u) => (u.id === userId ? { ...u, status } : u)))
+      }
+    } catch (error) {
+      console.error("Failed to update user status:", error)
+    }
+  }
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "active":
+        return "bg-green-100 text-green-800"
+      case "inactive":
+        return "bg-gray-100 text-gray-800"
+      case "suspended":
+        return "bg-red-100 text-red-800"
+      default:
+        return "bg-gray-100 text-gray-800"
+    }
+  }
+
+  const getRoleColor = (role: string) => {
+    switch (role) {
+      case "customer":
+        return "bg-blue-100 text-blue-800"
+      case "merchant":
+        return "bg-green-100 text-green-800"
+      case "bank_admin":
+        return "bg-purple-100 text-purple-800"
+      default:
+        return "bg-gray-100 text-gray-800"
+    }
   }
 
   const filteredUsers = users.filter((user) => {
+    const searchLower = searchTerm.toLowerCase()
     const matchesSearch =
-      user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.email.toLowerCase().includes(searchTerm.toLowerCase())
-
+      !searchTerm ||
+      user.name.toLowerCase().includes(searchLower) ||
+      user.email.toLowerCase().includes(searchLower) ||
+      user.id.toLowerCase().includes(searchLower)
     const matchesRole = roleFilter === "all" || user.role === roleFilter
     const matchesStatus = statusFilter === "all" || user.status === statusFilter
-
     return matchesSearch && matchesRole && matchesStatus
   })
 
-  const userStats = {
-    total: users.length,
-    active: users.filter((u) => u.status === "active").length,
-    customers: users.filter((u) => u.role === "customer").length,
-    merchants: users.filter((u) => u.role === "merchant").length,
-  }
+  const totalUsers = users.length
+  const activeUsers = users.filter((u) => u.status === "active").length
+  const suspendedUsers = users.filter((u) => u.status === "suspended").length
+  const verifiedUsers = users.filter((u) => u.verified).length
 
-  if (isLoading) {
+  if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
-      </div>
+      <DashboardLayout navigation={navigation} title="User Management">
+        <div className="flex items-center justify-center h-64">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+            <p className="mt-2 text-gray-500">Loading users...</p>
+          </div>
+        </div>
+      </DashboardLayout>
     )
   }
 
   return (
     <DashboardLayout navigation={navigation} title="User Management">
       <div className="space-y-6">
-        {/* User Stats */}
+        {error && (
+          <div className="bg-red-50 border border-red-200 rounded-md p-4">
+            <p className="text-red-800">{error}</p>
+          </div>
+        )}
+
+        {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
           <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center space-x-4">
-                <div className="p-3 bg-blue-100 rounded-lg">
-                  <Users className="h-6 w-6 text-blue-600" />
-                </div>
-                <div>
-                  <p className="text-sm text-gray-600">Total Users</p>
-                  <p className="text-2xl font-bold">{userStats.total}</p>
-                </div>
-              </div>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total Users</CardTitle>
+              <Users className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{totalUsers}</div>
+              <p className="text-xs text-muted-foreground">+12% from last month</p>
             </CardContent>
           </Card>
+
           <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center space-x-4">
-                <div className="p-3 bg-green-100 rounded-lg">
-                  <CheckCircle className="h-6 w-6 text-green-600" />
-                </div>
-                <div>
-                  <p className="text-sm text-gray-600">Active Users</p>
-                  <p className="text-2xl font-bold">{userStats.active}</p>
-                </div>
-              </div>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Active Users</CardTitle>
+              <Users className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{activeUsers}</div>
+              <p className="text-xs text-muted-foreground">{((activeUsers / totalUsers) * 100).toFixed(1)}% of total</p>
             </CardContent>
           </Card>
+
           <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center space-x-4">
-                <div className="p-3 bg-purple-100 rounded-lg">
-                  <User className="h-6 w-6 text-purple-600" />
-                </div>
-                <div>
-                  <p className="text-sm text-gray-600">Customers</p>
-                  <p className="text-2xl font-bold">{userStats.customers}</p>
-                </div>
-              </div>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Suspended</CardTitle>
+              <Users className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{suspendedUsers}</div>
+              <p className="text-xs text-muted-foreground">Require attention</p>
             </CardContent>
           </Card>
+
           <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center space-x-4">
-                <div className="p-3 bg-orange-100 rounded-lg">
-                  <CreditCard className="h-6 w-6 text-orange-600" />
-                </div>
-                <div>
-                  <p className="text-sm text-gray-600">Merchants</p>
-                  <p className="text-2xl font-bold">{userStats.merchants}</p>
-                </div>
-              </div>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Verified</CardTitle>
+              <Users className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{verifiedUsers}</div>
+              <p className="text-xs text-muted-foreground">
+                {((verifiedUsers / totalUsers) * 100).toFixed(1)}% verified
+              </p>
             </CardContent>
           </Card>
         </div>
@@ -235,15 +264,59 @@ export default function AdminUsers() {
         {/* User Management */}
         <Card>
           <CardHeader>
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
               <div>
-                <CardTitle>User Directory</CardTitle>
-                <CardDescription>Manage user accounts and permissions</CardDescription>
+                <CardTitle>User Management</CardTitle>
+                <CardDescription>Manage all users in the system</CardDescription>
               </div>
-              <Button className="bg-gradient-to-r from-blue-500 to-blue-600">
-                <Plus className="h-4 w-4 mr-2" />
-                Add User
-              </Button>
+              <div className="flex gap-2">
+                <Button variant="outline" size="sm">
+                  <Download className="h-4 w-4 mr-2" />
+                  Export
+                </Button>
+                <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
+                  <DialogTrigger asChild>
+                    <Button size="sm">
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add User
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Create New User</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4">
+                      <div>
+                        <Label htmlFor="name">Name</Label>
+                        <Input id="name" placeholder="Enter user name" />
+                      </div>
+                      <div>
+                        <Label htmlFor="email">Email</Label>
+                        <Input id="email" type="email" placeholder="Enter email address" />
+                      </div>
+                      <div>
+                        <Label htmlFor="role">Role</Label>
+                        <Select>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select role" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="customer">Customer</SelectItem>
+                            <SelectItem value="merchant">Merchant</SelectItem>
+                            <SelectItem value="bank_admin">Bank Admin</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button className="flex-1">Create User</Button>
+                        <Button variant="outline" onClick={() => setIsCreateModalOpen(false)}>
+                          Cancel
+                        </Button>
+                      </div>
+                    </div>
+                  </DialogContent>
+                </Dialog>
+              </div>
             </div>
           </CardHeader>
           <CardContent>
@@ -257,119 +330,171 @@ export default function AdminUsers() {
                   className="pl-10"
                 />
               </div>
-              <Select
-                value={roleFilter}
-                onChange={e => setRoleFilter(e.target.value)}
-                className="w-full sm:w-40"
-              >
-                <option value="all">All Roles</option>
-                <option value="customer">Customer</option>
-                <option value="merchant">Merchant</option>
-                <option value="bank_admin">Admin</option>
+              <Select value={roleFilter} onValueChange={setRoleFilter}>
+                <SelectTrigger className="w-full sm:w-[150px]">
+                  <SelectValue placeholder="Filter by role" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Roles</SelectItem>
+                  <SelectItem value="customer">Customer</SelectItem>
+                  <SelectItem value="merchant">Merchant</SelectItem>
+                  <SelectItem value="bank_admin">Bank Admin</SelectItem>
+                </SelectContent>
               </Select>
-              <Select
-                value={statusFilter}
-                onChange={e => setStatusFilter(e.target.value)}
-                className="w-full sm:w-40"
-              >
-                <option value="all">All Status</option>
-                <option value="active">Active</option>
-                <option value="suspended">Suspended</option>
-                <option value="pending">Pending</option>
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="w-full sm:w-[150px]">
+                  <SelectValue placeholder="Filter by status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Status</SelectItem>
+                  <SelectItem value="active">Active</SelectItem>
+                  <SelectItem value="inactive">Inactive</SelectItem>
+                  <SelectItem value="suspended">Suspended</SelectItem>
+                </SelectContent>
               </Select>
             </div>
 
             {/* Users Table */}
-            <div className="border rounded-lg">
+            <div className="rounded-md border">
               <Table>
                 <TableHeader>
                   <TableRow>
                     <TableHead>User</TableHead>
                     <TableHead>Role</TableHead>
                     <TableHead>Status</TableHead>
-                    <TableHead>Join Date</TableHead>
+                    <TableHead>Verified</TableHead>
+                    <TableHead>Created</TableHead>
                     <TableHead>Last Login</TableHead>
-                    <TableHead>Activity</TableHead>
                     <TableHead>Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredUsers.map((user) => (
-                    <TableRow key={user.id}>
-                      <TableCell>
-                        <div className="flex items-center space-x-3">
-                          <Avatar>
-                            <AvatarImage src={user.avatar || "/placeholder.svg"} />
-                            <AvatarFallback>
-                              {user.name
-                                .split(" ")
-                                .map((n) => n[0])
-                                .join("")}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div>
-                            <p className="font-medium">{user.name}</p>
-                            <p className="text-sm text-gray-500">{user.email}</p>
-                          </div>
-                        </div>
-                      </TableCell>
-                      <TableCell>{getRoleBadge(user.role)}</TableCell>
-                      <TableCell>{getStatusBadge(user.status)}</TableCell>
-                      <TableCell>
-                        <span className="text-sm">{user.joinDate}</span>
-                      </TableCell>
-                      <TableCell>
-                        <span className="text-sm">{user.lastLogin}</span>
-                      </TableCell>
-                      <TableCell>
-                        <div className="text-sm">
-                          <div>{user.transactions} transactions</div>
-                          <div className="text-gray-500">
-                            ${user.role === "merchant" ? user.totalRevenue?.toFixed(2) : user.totalSpent?.toFixed(2)}
-                          </div>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger>
-                            <Button variant="ghost" size="sm">
-                              <MoreHorizontal className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem>
-                              <Edit className="mr-2 h-4 w-4" />
-                              Edit User
-                            </DropdownMenuItem>
-                            <DropdownMenuItem>
-                              <Shield className="mr-2 h-4 w-4" />
-                              View Permissions
-                            </DropdownMenuItem>
-                            <DropdownMenuItem>
-                              <Ban className="mr-2 h-4 w-4" />
-                              {user.status === "active" ? "Suspend" : "Activate"}
-                            </DropdownMenuItem>
-                            <DropdownMenuItem className="text-red-600">
-                              <Trash2 className="mr-2 h-4 w-4" />
-                              Delete User
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
+                  {filteredUsers.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={7} className="text-center py-8">
+                        No users found
                       </TableCell>
                     </TableRow>
-                  ))}
+                  ) : (
+                    filteredUsers.map((user) => (
+                      <TableRow key={user.id}>
+                        <TableCell>
+                          <div className="flex items-center space-x-3">
+                            <Avatar className="h-8 w-8">
+                              <AvatarImage src={user.avatar || "/placeholder.svg"} />
+                              <AvatarFallback>
+                                {user.name
+                                  .split(" ")
+                                  .map((n) => n[0])
+                                  .join("")}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div>
+                              <div className="font-medium">{user.name}</div>
+                              <div className="text-sm text-gray-500">{user.email}</div>
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Badge className={getRoleColor(user.role)}>{user.role.replace("_", " ")}</Badge>
+                        </TableCell>
+                        <TableCell>
+                          <Badge className={getStatusColor(user.status)}>{user.status}</Badge>
+                        </TableCell>
+                        <TableCell>
+                          {user.verified ? (
+                            <Badge className="bg-green-100 text-green-800">Verified</Badge>
+                          ) : (
+                            <Badge className="bg-yellow-100 text-yellow-800">Pending</Badge>
+                          )}
+                        </TableCell>
+                        <TableCell>{new Date(user.createdAt).toLocaleDateString()}</TableCell>
+                        <TableCell>
+                          {user.lastLogin ? new Date(user.lastLogin).toLocaleDateString() : "Never"}
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex gap-2">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                setSelectedUser(user)
+                                setIsEditModalOpen(true)
+                              }}
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleDeleteUser(user.id)}
+                              className="text-red-600 hover:text-red-800"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
                 </TableBody>
               </Table>
             </div>
-
-            {filteredUsers.length === 0 && (
-              <div className="text-center py-8">
-                <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <p className="text-gray-500">No users found matching your criteria</p>
-              </div>
-            )}
           </CardContent>
         </Card>
+
+        {/* Edit User Modal */}
+        <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Edit User</DialogTitle>
+            </DialogHeader>
+            {selectedUser && (
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="edit-name">Name</Label>
+                  <Input id="edit-name" defaultValue={selectedUser.name} />
+                </div>
+                <div>
+                  <Label htmlFor="edit-email">Email</Label>
+                  <Input id="edit-email" type="email" defaultValue={selectedUser.email} />
+                </div>
+                <div>
+                  <Label htmlFor="edit-role">Role</Label>
+                  <Select defaultValue={selectedUser.role}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="customer">Customer</SelectItem>
+                      <SelectItem value="merchant">Merchant</SelectItem>
+                      <SelectItem value="bank_admin">Bank Admin</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label htmlFor="edit-status">Status</Label>
+                  <Select defaultValue={selectedUser.status}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="active">Active</SelectItem>
+                      <SelectItem value="inactive">Inactive</SelectItem>
+                      <SelectItem value="suspended">Suspended</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="flex gap-2">
+                  <Button className="flex-1">Save Changes</Button>
+                  <Button variant="outline" onClick={() => setIsEditModalOpen(false)}>
+                    Cancel
+                  </Button>
+                </div>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
       </div>
     </DashboardLayout>
   )

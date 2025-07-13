@@ -77,17 +77,45 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const register = async (userData: RegisterData): Promise<boolean> => {
     try {
+      // Map frontend fields to backend fields
+      let payload: any = {
+        username: userData.name,
+        email: userData.email,
+        password: userData.password,
+        roles: [],
+      }
+      if (userData.role === "customer") {
+        payload.roles = ["ROLE_CUSTOMER"]
+      } else if (userData.role === "merchant") {
+        payload.roles = ["ROLE_MERCHANT"]
+        payload.merchantId = userData.companyName
+      } else if (userData.role === "bank_admin") {
+        payload.roles = ["ROLE_BANK_ADMIN"]
+        payload.bankId = userData.companyName
+      }
+
+      console.debug("[Register] Sending payload:", payload)
+
       const response = await fetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(userData),
+        body: JSON.stringify(payload),
       })
 
+      let data = null
+      try {
+        data = await response.clone().json()
+        console.debug("[Register] Backend response:", data)
+      } catch (e) {
+        console.debug("[Register] Backend response not JSON or empty.")
+      }
+
       if (response.ok) {
-        const data = await response.json()
-        setUser(data.user)
-        localStorage.setItem("auth_token", data.token)
-        localStorage.setItem("user_data", JSON.stringify(data.user))
+        if (data) {
+          setUser(data.user)
+          localStorage.setItem("auth_token", data.token)
+          localStorage.setItem("user_data", JSON.stringify(data.user))
+        }
         return true
       }
       return false

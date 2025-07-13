@@ -27,6 +27,7 @@ import {
   Clock,
 } from "lucide-react"
 
+
 export default function CustomerPayment() {
   const { user, isLoading } = useAuth()
   const router = useRouter()
@@ -41,6 +42,7 @@ export default function CustomerPayment() {
   const [isProcessing, setIsProcessing] = useState(false)
   const [paymentStatus, setPaymentStatus] = useState<"idle" | "processing" | "success" | "error">("idle")
   const [error, setError] = useState("")
+  const [paymentMethods, setPaymentMethods] = useState<any[]>([])
 
   useEffect(() => {
     if (!isLoading && (!user || user.role !== "customer")) {
@@ -48,19 +50,27 @@ export default function CustomerPayment() {
     }
   }, [user, isLoading, router])
 
-  const navigation = [
-    { name: "Dashboard", href: "/customer/dashboard", icon: Home },
-    { name: "Make Payment", href: "/customer/payment", icon: CreditCard, current: true },
-    { name: "Transaction History", href: "/customer/transactions", icon: History },
-    { name: "Payment Methods", href: "/customer/payment-methods", icon: CreditCard },
-    { name: "Profile", href: "/customer/profile", icon: User },
-    { name: "Settings", href: "/customer/settings", icon: Settings },
-  ]
-
-  const paymentMethods = [
-    { id: "1", type: "Visa", last4: "4532", expiry: "12/25" },
-    { id: "2", type: "Mastercard", last4: "8901", expiry: "08/26" },
-  ]
+  useEffect(() => {
+    if (!user) return
+    // Fetch payment methods from backend
+    const fetchPaymentMethods = async () => {
+      try {
+        const res = await fetch(`/api/payment-methods?userId=${user.id}`)
+        const data = await res.json()
+        setPaymentMethods(
+          (data.paymentMethods || []).map((pm: any) => ({
+            id: pm.id,
+            type: pm.cardType || pm.type,
+            last4: pm.last4,
+            expiry: pm.expiryMonth && pm.expiryYear ? `${pm.expiryMonth.toString().padStart(2, "0")}/${pm.expiryYear}` : "",
+          }))
+        )
+      } catch (e) {
+        // ignore
+      }
+    }
+    fetchPaymentMethods()
+  }, [user])
 
   const popularMerchants = ["Amazon", "Netflix", "Spotify", "Uber", "Starbucks", "Apple", "Google", "Microsoft"]
 
@@ -70,28 +80,41 @@ export default function CustomerPayment() {
     setIsProcessing(true)
     setPaymentStatus("processing")
 
-    try {
-      // Simulate payment processing
-      await new Promise((resolve) => setTimeout(resolve, 3000))
+    if (!user) {
+      setPaymentStatus("error")
+      setError("User not authenticated. Please log in again.")
+      setIsProcessing(false)
+      return
+    }
 
-      // Simulate random success/failure
-      if (Math.random() > 0.1) {
-        // 90% success rate
+    try {
+      // Send payment to backend
+      const res = await fetch("/api/transactions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          customerId: user.id,
+          merchantName: paymentData.merchant,
+          amount: Number(paymentData.amount),
+          description: paymentData.description,
+          paymentMethodId: paymentData.paymentMethod,
+        }),
+      })
+      const data = await res.json()
+      if (res.ok && data.transaction) {
         setPaymentStatus("success")
         addNotification({
           title: "Payment Successful",
           message: `Payment of $${paymentData.amount} to ${paymentData.merchant} completed successfully`,
           type: "success",
         })
-
-        // Reset form after success
         setTimeout(() => {
           setPaymentData({ merchant: "", amount: "", description: "", paymentMethod: "" })
           setPaymentStatus("idle")
         }, 3000)
       } else {
         setPaymentStatus("error")
-        setError("Payment failed. Please try again.")
+        setError(data.error || "Payment failed. Please try again.")
       }
     } catch (error) {
       setPaymentStatus("error")
@@ -100,6 +123,15 @@ export default function CustomerPayment() {
       setIsProcessing(false)
     }
   }
+
+  const navigation = [
+    { name: "Dashboard", href: "/customer/dashboard", icon: Home },
+    { name: "Make Payment", href: "/customer/payment", icon: CreditCard, current: true },
+    { name: "Transaction History", href: "/customer/transactions", icon: History },
+    { name: "Payment Methods", href: "/customer/payment-methods", icon: CreditCard },
+    { name: "Profile", href: "/customer/profile", icon: User },
+    { name: "Settings", href: "/customer/settings", icon: Settings },
+  ]
 
   if (isLoading) {
     return (

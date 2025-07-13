@@ -1,22 +1,21 @@
 "use client"
 
-import { useEffect } from "react"
+import { useEffect, useState } from "react"
 import { useAuth } from "@/contexts/auth-context"
 import { useRouter } from "next/navigation"
 import DashboardLayout from "@/components/layout/dashboard-layout"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../../../components/ui/card"
-import { Button } from "../../../components/ui/button"
-import { Progress } from "../../../components/ui/progress"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Progress } from "@/components/ui/progress"
+import { apiFetch } from "@/lib/api"
 import {
   Home,
   Users,
   CreditCard,
+  Shield,
   Settings,
   User,
   DollarSign,
-  TrendingUp,
   Activity,
-  Shield,
   AlertTriangle,
   CheckCircle,
   Server,
@@ -28,97 +27,68 @@ export default function AdminDashboard() {
   const { user, isLoading } = useAuth()
   const router = useRouter()
 
+  const [stats, setStats] = useState<any[]>([])
+  const [systemHealth, setSystemHealth] = useState<any[]>([])
+  const [recentAlerts, setRecentAlerts] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+
   useEffect(() => {
     if (!isLoading && (!user || user.role !== "bank_admin")) {
       router.push("/auth/login")
     }
   }, [user, isLoading, router])
 
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      setLoading(true)
+      try {
+        // Example endpoints, adjust as needed for your backend
+        const statsRes = await apiFetch("/api/admin/dashboard/stats")
+        const healthRes = await apiFetch("/api/admin/dashboard/system-health")
+        const alertsRes = await apiFetch("/api/admin/dashboard/alerts")
+
+        const statsData = statsRes.ok ? await statsRes.json() : null
+        const healthData = healthRes.ok ? await healthRes.json() : null
+        const alertsData = alertsRes.ok ? await alertsRes.json() : null
+
+        setStats(statsData?.stats || [])
+        setSystemHealth(healthData?.systemHealth || [])
+        setRecentAlerts(alertsData?.alerts || [])
+      } catch (e) {
+        // fallback to empty or mock data if needed
+        setStats([])
+        setSystemHealth([])
+        setRecentAlerts([])
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchDashboardData()
+  }, [])
+
   const navigation = [
     { name: "Dashboard", href: "/admin/dashboard", icon: Home, current: true },
-    { name: "User Management", href: "/admin/users", icon: Users },
+    { name: "Users", href: "/admin/users", icon: Users },
     { name: "Transactions", href: "/admin/transactions", icon: CreditCard },
-    { name: "System Monitor", href: "/admin/system", icon: Server },
     { name: "Security", href: "/admin/security", icon: Shield },
+    { name: "System", href: "/admin/system", icon: Server },
     { name: "Analytics", href: "/admin/analytics", icon: BarChart3 },
-    { name: "Profile", href: "/admin/profile", icon: User },
     { name: "Settings", href: "/admin/settings", icon: Settings },
+    { name: "Profile", href: "/admin/profile", icon: User },
   ]
 
-  const systemStats = [
-    {
-      title: "Total Users",
-      value: "12,847",
-      change: "+12.5%",
-      icon: Users,
-      color: "text-blue-600",
-    },
-    {
-      title: "Transaction Volume",
-      value: "$2.4M",
-      change: "+8.2%",
-      icon: DollarSign,
-      color: "text-green-600",
-    },
-    {
-      title: "System Uptime",
-      value: "99.99%",
-      change: "+0.01%",
-      icon: Activity,
-      color: "text-green-600",
-    },
-    {
-      title: "Security Score",
-      value: "98.5%",
-      change: "+1.2%",
-      icon: Shield,
-      color: "text-purple-600",
-    },
-  ]
 
-  const systemHealth = [
-    { name: "API Gateway", status: "healthy", load: 78, instances: 3 },
-    { name: "Auth Service", status: "healthy", load: 65, instances: 2 },
-    { name: "Payment Service", status: "healthy", load: 82, instances: 5 },
-    { name: "Database Cluster", status: "warning", load: 91, instances: 3 },
-    { name: "Notification Service", status: "healthy", load: 45, instances: 2 },
-    { name: "Analytics Service", status: "healthy", load: 67, instances: 2 },
-  ]
 
-  const recentAlerts = [
-    {
-      id: "1",
-      type: "warning",
-      title: "High Database Load",
-      message: "Database cluster experiencing high load (91%)",
-      timestamp: "5 minutes ago",
-    },
-    {
-      id: "2",
-      type: "info",
-      title: "New User Registration",
-      message: "247 new users registered in the last hour",
-      timestamp: "15 minutes ago",
-    },
-    {
-      id: "3",
-      type: "success",
-      title: "Security Scan Complete",
-      message: "Weekly security scan completed successfully",
-      timestamp: "1 hour ago",
-    },
-  ]
-
-  const getStatusColor = (status: string) => {
+  const getStatusIcon = (status: string) => {
     switch (status) {
       case "healthy":
-        return "bg-green-500"
+        return <CheckCircle className="h-4 w-4 text-green-600" />
       case "warning":
-        return "bg-yellow-500"
+        return <AlertTriangle className="h-4 w-4 text-yellow-600" />
       case "critical":
-        return "bg-red-500"
+        return <AlertTriangle className="h-4 w-4 text-red-600" />
       default:
-        return "bg-gray-500"
+        return <CheckCircle className="h-4 w-4 text-gray-600" />
     }
   }
 
@@ -133,7 +103,7 @@ export default function AdminDashboard() {
     }
   }
 
-  if (isLoading) {
+  if (isLoading || loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
@@ -142,17 +112,17 @@ export default function AdminDashboard() {
   }
 
   return (
-    <DashboardLayout navigation={navigation} title="System Administration">
+    <DashboardLayout navigation={navigation} title="Admin Dashboard">
       <div className="space-y-6">
         {/* Welcome Section */}
         <div className="bg-gradient-to-r from-purple-500 to-red-600 rounded-lg p-6 text-white">
-          <h1 className="text-2xl font-bold mb-2">System Control Center</h1>
+          <h1 className="text-2xl font-bold mb-2">System Administration</h1>
           <p className="text-purple-100">Monitor and manage the entire payment gateway infrastructure.</p>
         </div>
 
-        {/* System Stats */}
+        {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {systemStats.map((stat, index) => (
+          {stats.map((stat, index) => (
             <Card key={index}>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">{stat.title}</CardTitle>
@@ -182,17 +152,14 @@ export default function AdminDashboard() {
               {systemHealth.map((service, index) => (
                 <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
                   <div className="flex items-center space-x-3">
-                    <div className={`w-2 h-2 rounded-full ${getStatusColor(service.status)}`} />
-                    <div>
-                      <p className="font-medium text-sm">{service.name}</p>
-                      <p className="text-xs text-gray-500">{service.instances} instances</p>
-                    </div>
+                    {getStatusIcon(service.status)}
+                    <span className="font-medium">{service.name}</span>
                   </div>
                   <div className="flex items-center space-x-2">
                     <div className="w-20">
                       <Progress value={service.load} className="h-2" />
                     </div>
-                    <span className="text-xs text-gray-500 w-8">{service.load}%</span>
+                    <span className="text-sm text-gray-500 w-8">{service.load}%</span>
                   </div>
                 </div>
               ))}
@@ -204,100 +171,102 @@ export default function AdminDashboard() {
             <CardHeader>
               <CardTitle className="flex items-center space-x-2">
                 <AlertTriangle className="h-5 w-5" />
-                <span>System Alerts</span>
+                <span>Recent Alerts</span>
               </CardTitle>
-              <CardDescription>Recent system notifications</CardDescription>
+              <CardDescription>System notifications and alerts</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               {recentAlerts.map((alert) => (
                 <div key={alert.id} className="flex items-start space-x-3 p-3 border rounded-lg">
-                  <div className="flex-shrink-0 mt-0.5">{getAlertIcon(alert.type)}</div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-medium text-sm">{alert.title}</p>
-                    <p className="text-sm text-gray-600">{alert.message}</p>
-                    <p className="text-xs text-gray-500 mt-1">{alert.timestamp}</p>
+                  {getAlertIcon(alert.type)}
+                  <div className="flex-1">
+                    <p className="text-sm font-medium">{alert.message}</p>
+                    <p className="text-xs text-gray-500">{alert.time}</p>
                   </div>
                 </div>
               ))}
-              <Button variant="outline" className="w-full bg-transparent" onClick={() => router.push("/admin/system")}>
-                View All Alerts
-              </Button>
             </CardContent>
           </Card>
         </div>
 
         {/* Quick Actions */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200 cursor-pointer hover:shadow-lg transition-shadow">
-            <CardContent className="p-6" onClick={() => router.push("/admin/users")}>
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+          <Card className="cursor-pointer hover:shadow-lg transition-shadow">
+            <CardContent className="p-6">
               <div className="flex items-center space-x-4">
-                <div className="p-3 rounded-lg bg-blue-200">
-                  <Users className="h-6 w-6 text-blue-700" />
+                <div className="p-3 bg-blue-100 rounded-lg">
+                  <Users className="h-6 w-6 text-blue-600" />
                 </div>
                 <div>
-                  <h3 className="font-semibold text-blue-900">User Management</h3>
-                  <p className="text-sm text-blue-700">Manage users and permissions</p>
+                  <h3 className="font-semibold">Manage Users</h3>
+                  <p className="text-sm text-gray-500">User accounts & roles</p>
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="bg-gradient-to-br from-green-50 to-green-100 border-green-200 cursor-pointer hover:shadow-lg transition-shadow">
-            <CardContent className="p-6" onClick={() => router.push("/admin/transactions")}>
+          <Card className="cursor-pointer hover:shadow-lg transition-shadow">
+            <CardContent className="p-6">
               <div className="flex items-center space-x-4">
-                <div className="p-3 rounded-lg bg-green-200">
-                  <CreditCard className="h-6 w-6 text-green-700" />
+                <div className="p-3 bg-green-100 rounded-lg">
+                  <CreditCard className="h-6 w-6 text-green-600" />
                 </div>
                 <div>
-                  <h3 className="font-semibold text-green-900">Transaction Monitor</h3>
-                  <p className="text-sm text-green-700">Monitor all transactions</p>
+                  <h3 className="font-semibold">Transactions</h3>
+                  <p className="text-sm text-gray-500">Monitor payments</p>
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200 cursor-pointer hover:shadow-lg transition-shadow">
-            <CardContent className="p-6" onClick={() => router.push("/admin/security")}>
+          <Card className="cursor-pointer hover:shadow-lg transition-shadow">
+            <CardContent className="p-6">
               <div className="flex items-center space-x-4">
-                <div className="p-3 rounded-lg bg-purple-200">
-                  <Shield className="h-6 w-6 text-purple-700" />
+                <div className="p-3 bg-purple-100 rounded-lg">
+                  <Shield className="h-6 w-6 text-purple-600" />
                 </div>
                 <div>
-                  <h3 className="font-semibold text-purple-900">Security Center</h3>
-                  <p className="text-sm text-purple-700">Security monitoring & alerts</p>
+                  <h3 className="font-semibold">Security</h3>
+                  <p className="text-sm text-gray-500">Security controls</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="cursor-pointer hover:shadow-lg transition-shadow">
+            <CardContent className="p-6">
+              <div className="flex items-center space-x-4">
+                <div className="p-3 bg-orange-100 rounded-lg">
+                  <Database className="h-6 w-6 text-orange-600" />
+                </div>
+                <div>
+                  <h3 className="font-semibold">System</h3>
+                  <p className="text-sm text-gray-500">Infrastructure</p>
                 </div>
               </div>
             </CardContent>
           </Card>
         </div>
 
-        {/* System Overview */}
+        {/* Performance Metrics */}
         <Card>
           <CardHeader>
-            <CardTitle>Infrastructure Overview</CardTitle>
-            <CardDescription>Real-time system performance metrics</CardDescription>
+            <CardTitle>Performance Metrics</CardTitle>
+            <CardDescription>Real-time system performance indicators</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-              <div className="text-center p-4 bg-blue-50 rounded-lg">
-                <Database className="h-8 w-8 mx-auto mb-2 text-blue-600" />
-                <div className="text-2xl font-bold text-blue-700">847</div>
-                <div className="text-sm text-blue-600">Database Connections</div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="text-center p-4 border rounded-lg">
+                <div className="text-2xl font-bold text-blue-600">12.4K</div>
+                <div className="text-sm text-gray-500">Transactions/hour</div>
               </div>
-              <div className="text-center p-4 bg-green-50 rounded-lg">
-                <Activity className="h-8 w-8 mx-auto mb-2 text-green-600" />
-                <div className="text-2xl font-bold text-green-700">12.4K</div>
-                <div className="text-sm text-green-600">Requests/min</div>
+              <div className="text-center p-4 border rounded-lg">
+                <div className="text-2xl font-bold text-green-600">45ms</div>
+                <div className="text-sm text-gray-500">Avg response time</div>
               </div>
-              <div className="text-center p-4 bg-yellow-50 rounded-lg">
-                <TrendingUp className="h-8 w-8 mx-auto mb-2 text-yellow-600" />
-                <div className="text-2xl font-bold text-yellow-700">45ms</div>
-                <div className="text-sm text-yellow-600">Avg Response Time</div>
-              </div>
-              <div className="text-center p-4 bg-purple-50 rounded-lg">
-                <Shield className="h-8 w-8 mx-auto mb-2 text-purple-600" />
-                <div className="text-2xl font-bold text-purple-700">0</div>
-                <div className="text-sm text-purple-600">Security Incidents</div>
+              <div className="text-center p-4 border rounded-lg">
+                <div className="text-2xl font-bold text-purple-600">99.97%</div>
+                <div className="text-sm text-gray-500">Success rate</div>
               </div>
             </div>
           </CardContent>

@@ -18,19 +18,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import {
-  Home,
-  CreditCard,
-  History,
-  Settings,
-  User,
-  Plus,
-  Edit,
-  Trash2,
-  Shield,
-  CheckCircle,
-  AlertCircle,
-} from "lucide-react"
+import { Home, CreditCard, History, Settings, User, Plus, Edit, Trash2, Shield, Star } from "lucide-react"
 
 export default function CustomerPaymentMethods() {
   const { user, isLoading } = useAuth()
@@ -67,7 +55,6 @@ export default function CustomerPaymentMethods() {
       expiry: "12/25",
       cardholderName: "John Doe",
       isDefault: true,
-      isVerified: true,
       addedDate: "2023-06-15",
     },
     {
@@ -77,18 +64,16 @@ export default function CustomerPaymentMethods() {
       expiry: "08/26",
       cardholderName: "John Doe",
       isDefault: false,
-      isVerified: true,
       addedDate: "2023-08-22",
     },
     {
       id: "3",
       type: "American Express",
-      last4: "2345",
+      last4: "1234",
       expiry: "03/27",
       cardholderName: "John Doe",
       isDefault: false,
-      isVerified: false,
-      addedDate: "2024-01-05",
+      addedDate: "2023-11-10",
     },
   ]
 
@@ -137,8 +122,8 @@ export default function CustomerPaymentMethods() {
           </div>
           <Dialog open={isAddingCard} onOpenChange={setIsAddingCard}>
             <DialogTrigger asChild>
-              <Button className="bg-gradient-to-r from-blue-500 to-blue-600">
-                <Plus className="h-4 w-4 mr-2" />
+              <Button className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700">
+                <Plus className="mr-2 h-4 w-4" />
                 Add Payment Method
               </Button>
             </DialogTrigger>
@@ -148,22 +133,6 @@ export default function CustomerPaymentMethods() {
                 <DialogDescription>Add a new credit or debit card to your account</DialogDescription>
               </DialogHeader>
               <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="cardType">Card Type</Label>
-                  <Select
-                    value={newCard.cardType}
-                    onValueChange={(value) => setNewCard({ ...newCard, cardType: value })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select card type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="visa">Visa</SelectItem>
-                      <SelectItem value="mastercard">Mastercard</SelectItem>
-                      <SelectItem value="amex">American Express</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
                 <div className="space-y-2">
                   <Label htmlFor="cardholderName">Cardholder Name</Label>
                   <Input
@@ -202,6 +171,22 @@ export default function CustomerPaymentMethods() {
                     />
                   </div>
                 </div>
+                <div className="space-y-2">
+                  <Label htmlFor="cardType">Card Type</Label>
+                  <Select
+                    value={newCard.cardType}
+                    onValueChange={(value) => setNewCard({ ...newCard, cardType: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select card type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="visa">Visa</SelectItem>
+                      <SelectItem value="mastercard">Mastercard</SelectItem>
+                      <SelectItem value="amex">American Express</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
                 <div className="flex space-x-2 pt-4">
                   <Button onClick={handleAddCard} className="flex-1">
                     Add Card
@@ -234,7 +219,7 @@ export default function CustomerPaymentMethods() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {paymentMethods.map((method) => (
             <Card key={method.id} className="relative overflow-hidden">
-              <div className={`h-2 bg-gradient-to-r ${getCardColor(method.type)}`} />
+              <div className={`h-2 bg-gradient-to-r ${getCardColor(method.type)}`}></div>
               <CardHeader className="pb-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-3">
@@ -244,58 +229,44 @@ export default function CustomerPaymentMethods() {
                       <p className="text-sm text-gray-500">•••• •••• •••• {method.last4}</p>
                     </div>
                   </div>
-                  <div className="flex items-center space-x-2">
-                    {method.isVerified ? (
-                      <CheckCircle className="h-4 w-4 text-green-600" />
-                    ) : (
-                      <AlertCircle className="h-4 w-4 text-yellow-600" />
-                    )}
-                  </div>
+                  {method.isDefault && (
+                    <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">
+                      <Star className="h-3 w-3 mr-1" />
+                      Default
+                    </Badge>
+                  )}
                 </div>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
                   <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">Cardholder</span>
+                    <span className="text-gray-500">Cardholder</span>
                     <span className="font-medium">{method.cardholderName}</span>
                   </div>
                   <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">Expires</span>
+                    <span className="text-gray-500">Expires</span>
                     <span className="font-medium">{method.expiry}</span>
                   </div>
                   <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">Added</span>
+                    <span className="text-gray-500">Added</span>
                     <span className="font-medium">{method.addedDate}</span>
                   </div>
                 </div>
-
-                <div className="flex items-center space-x-2">
-                  {method.isDefault && <Badge className="bg-green-100 text-green-800">Default</Badge>}
-                  {method.isVerified ? (
-                    <Badge className="bg-blue-100 text-blue-800">Verified</Badge>
-                  ) : (
-                    <Badge className="bg-yellow-100 text-yellow-800">Pending Verification</Badge>
-                  )}
-                </div>
-
                 <div className="flex space-x-2 pt-2">
                   <Button variant="outline" size="sm" className="flex-1 bg-transparent">
-                    <Edit className="h-3 w-3 mr-1" />
+                    <Edit className="h-4 w-4 mr-1" />
                     Edit
                   </Button>
                   {!method.isDefault && (
                     <Button variant="outline" size="sm" className="flex-1 bg-transparent">
-                      <Trash2 className="h-3 w-3 mr-1" />
-                      Remove
+                      <Star className="h-4 w-4 mr-1" />
+                      Set Default
                     </Button>
                   )}
-                </div>
-
-                {!method.isDefault && (
-                  <Button variant="ghost" size="sm" className="w-full text-blue-600 hover:text-blue-700">
-                    Set as Default
+                  <Button variant="outline" size="sm" className="text-red-600 hover:text-red-700 bg-transparent">
+                    <Trash2 className="h-4 w-4" />
                   </Button>
-                )}
+                </div>
               </CardContent>
             </Card>
           ))}
@@ -312,48 +283,44 @@ export default function CustomerPaymentMethods() {
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="flex items-start space-x-3">
-                <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
-                  <CheckCircle className="h-4 w-4 text-green-600" />
+              <div className="space-y-4">
+                <div className="flex items-center space-x-3">
+                  <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                    <Shield className="h-4 w-4 text-green-600" />
+                  </div>
+                  <div>
+                    <p className="font-medium">256-bit SSL Encryption</p>
+                    <p className="text-sm text-gray-500">Bank-grade security for all transactions</p>
+                  </div>
                 </div>
-                <div>
-                  <h3 className="font-medium">End-to-End Encryption</h3>
-                  <p className="text-sm text-gray-600 mt-1">
-                    All card data is encrypted using AES-256 encryption before storage
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-start space-x-3">
-                <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
-                  <CheckCircle className="h-4 w-4 text-green-600" />
-                </div>
-                <div>
-                  <h3 className="font-medium">PCI DSS Compliance</h3>
-                  <p className="text-sm text-gray-600 mt-1">
-                    We maintain the highest level of payment card industry security standards
-                  </p>
+                <div className="flex items-center space-x-3">
+                  <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                    <Shield className="h-4 w-4 text-green-600" />
+                  </div>
+                  <div>
+                    <p className="font-medium">PCI DSS Compliant</p>
+                    <p className="text-sm text-gray-500">Meets industry security standards</p>
+                  </div>
                 </div>
               </div>
-              <div className="flex items-start space-x-3">
-                <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
-                  <CheckCircle className="h-4 w-4 text-green-600" />
+              <div className="space-y-4">
+                <div className="flex items-center space-x-3">
+                  <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                    <Shield className="h-4 w-4 text-green-600" />
+                  </div>
+                  <div>
+                    <p className="font-medium">Fraud Monitoring</p>
+                    <p className="text-sm text-gray-500">24/7 transaction monitoring</p>
+                  </div>
                 </div>
-                <div>
-                  <h3 className="font-medium">Fraud Monitoring</h3>
-                  <p className="text-sm text-gray-600 mt-1">
-                    24/7 monitoring for suspicious activity and unauthorized transactions
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-start space-x-3">
-                <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
-                  <CheckCircle className="h-4 w-4 text-green-600" />
-                </div>
-                <div>
-                  <h3 className="font-medium">Secure Tokenization</h3>
-                  <p className="text-sm text-gray-600 mt-1">
-                    Card numbers are replaced with secure tokens for all transactions
-                  </p>
+                <div className="flex items-center space-x-3">
+                  <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                    <Shield className="h-4 w-4 text-green-600" />
+                  </div>
+                  <div>
+                    <p className="font-medium">Tokenization</p>
+                    <p className="text-sm text-gray-500">Card numbers are never stored directly</p>
+                  </div>
                 </div>
               </div>
             </div>

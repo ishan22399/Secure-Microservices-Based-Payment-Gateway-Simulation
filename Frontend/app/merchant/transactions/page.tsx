@@ -1,272 +1,230 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useState, useEffect } from "react"
 import { useAuth } from "@/contexts/auth-context"
-import { useRouter } from "next/navigation"
 import DashboardLayout from "@/components/layout/dashboard-layout"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import {
-  Home,
-  CreditCard,
-  History,
-  Settings,
-  User,
-  Search,
-  Download,
-  Eye,
-  RefreshCw,
-  TrendingUp,
-  DollarSign,
-  Users,
-  BarChart3,
-  Code,
-} from "lucide-react"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { CreditCard, Search, Download, Eye, RefreshCw } from "lucide-react"
+import { apiFetch } from "@/lib/api"
 
-export default function MerchantTransactions() {
-  const { user, isLoading } = useAuth()
-  const router = useRouter()
+interface Transaction {
+  id: string
+  customerId: string
+  customerName: string
+  amount: number
+  currency: string
+  status: "completed" | "pending" | "failed" | "refunded"
+  timestamp: string
+  paymentMethod: string
+  description: string
+  fees: number
+}
+
+export default function MerchantTransactionsPage() {
+  const { user } = useAuth()
+  const [transactions, setTransactions] = useState<Transaction[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [searchTerm, setSearchTerm] = useState("")
   const [statusFilter, setStatusFilter] = useState("all")
   const [dateFilter, setDateFilter] = useState("all")
 
-  useEffect(() => {
-    if (!isLoading && (!user || user.role !== "merchant")) {
-      router.push("/auth/login")
-    }
-  }, [user, isLoading, router])
-
   const navigation = [
-    { name: "Dashboard", href: "/merchant/dashboard", icon: Home },
-    { name: "Transactions", href: "/merchant/transactions", icon: History, current: true },
-    { name: "Analytics", href: "/merchant/analytics", icon: BarChart3 },
+    { name: "Dashboard", href: "/merchant/dashboard", icon: CreditCard },
+    { name: "Transactions", href: "/merchant/transactions", icon: CreditCard, current: true },
+    { name: "Analytics", href: "/merchant/analytics", icon: CreditCard },
+    { name: "Customers", href: "/merchant/customers", icon: CreditCard },
     { name: "Payment Links", href: "/merchant/payment-links", icon: CreditCard },
-    { name: "API Integration", href: "/merchant/integration", icon: Code },
-    { name: "Profile", href: "/merchant/profile", icon: User },
-    { name: "Settings", href: "/merchant/settings", icon: Settings },
+    { name: "Settings", href: "/merchant/settings", icon: CreditCard },
   ]
 
-  const transactions = [
-    {
-      id: "TXN-001",
-      customer: "john.doe@email.com",
-      customerName: "John Doe",
-      amount: 299.99,
-      status: "completed",
-      date: "2024-01-10",
-      time: "14:32",
-      paymentMethod: "Visa ****4532",
-      description: "Product purchase - Electronics",
-      fee: 8.99,
-      net: 291.0,
-    },
-    {
-      id: "TXN-002",
-      customer: "jane.smith@email.com",
-      customerName: "Jane Smith",
-      amount: 89.99,
-      status: "completed",
-      date: "2024-01-10",
-      time: "12:15",
-      paymentMethod: "Mastercard ****8901",
-      description: "Service subscription",
-      fee: 2.7,
-      net: 87.29,
-    },
-    {
-      id: "TXN-003",
-      customer: "bob.wilson@email.com",
-      customerName: "Bob Wilson",
-      amount: 156.5,
-      status: "pending",
-      date: "2024-01-10",
-      time: "11:45",
-      paymentMethod: "Apple Pay",
-      description: "Digital product",
-      fee: 4.7,
-      net: 151.8,
-    },
-    {
-      id: "TXN-004",
-      customer: "alice.brown@email.com",
-      customerName: "Alice Brown",
-      amount: 45.0,
-      status: "failed",
-      date: "2024-01-09",
-      time: "18:20",
-      paymentMethod: "Visa ****2345",
-      description: "Payment declined",
-      fee: 0,
-      net: 0,
-    },
-    {
-      id: "TXN-005",
-      customer: "charlie.davis@email.com",
-      customerName: "Charlie Davis",
-      amount: 234.75,
-      status: "completed",
-      date: "2024-01-09",
-      time: "16:30",
-      paymentMethod: "Mastercard ****5678",
-      description: "Bulk order",
-      fee: 7.04,
-      net: 227.71,
-    },
-    {
-      id: "TXN-006",
-      customer: "diana.miller@email.com",
-      customerName: "Diana Miller",
-      amount: 67.25,
-      status: "refunded",
-      date: "2024-01-09",
-      time: "14:15",
-      paymentMethod: "Visa ****9012",
-      description: "Product return",
-      fee: -2.02,
-      net: -67.25,
-    },
-    {
-      id: "TXN-007",
-      customer: "evan.taylor@email.com",
-      customerName: "Evan Taylor",
-      amount: 123.45,
-      status: "completed",
-      date: "2024-01-08",
-      time: "20:45",
-      paymentMethod: "PayPal",
-      description: "Online service",
-      fee: 3.7,
-      net: 119.75,
-    },
-    {
-      id: "TXN-008",
-      customer: "fiona.clark@email.com",
-      customerName: "Fiona Clark",
-      amount: 89.0,
-      status: "disputed",
-      date: "2024-01-08",
-      time: "13:22",
-      paymentMethod: "Visa ****3456",
-      description: "Chargeback initiated",
-      fee: 15.0,
-      net: -15.0,
-    },
-  ]
-
-  const getStatusBadge = (status: string) => {
-    const variants = {
-      completed: "bg-green-100 text-green-800",
-      pending: "bg-yellow-100 text-yellow-800",
-      failed: "bg-red-100 text-red-800",
-      refunded: "bg-blue-100 text-blue-800",
-      disputed: "bg-orange-100 text-orange-800",
+  useEffect(() => {
+    if (user?.id) {
+      fetchTransactions()
     }
-    return <Badge className={variants[status as keyof typeof variants]}>{status}</Badge>
+  }, [user?.id])
+
+  const fetchTransactions = async () => {
+    try {
+      setLoading(true)
+      setError(null)
+      const response = await apiFetch(`/api/transactions?merchantId=${user?.id}&role=merchant`)
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch transactions")
+      }
+
+      const data = await response.json()
+      setTransactions(data.transactions || mockTransactions)
+    } catch (error) {
+      console.error("Failed to fetch transactions:", error)
+      setError(error instanceof Error ? error.message : "Failed to fetch transactions")
+      // Set mock data as fallback
+      setTransactions(mockTransactions)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const mockTransactions: Transaction[] = [
+    {
+      id: "tx_123456",
+      customerId: "cust_001",
+      customerName: "John Doe",
+      amount: 150.0,
+      currency: "USD",
+      status: "completed",
+      timestamp: new Date().toISOString(),
+      paymentMethod: "Credit Card",
+      description: "Monthly subscription",
+      fees: 4.35,
+    },
+    {
+      id: "tx_123457",
+      customerId: "cust_002",
+      customerName: "Jane Smith",
+      amount: 75.5,
+      currency: "USD",
+      status: "pending",
+      timestamp: new Date(Date.now() - 3600000).toISOString(),
+      paymentMethod: "Debit Card",
+      description: "Product purchase",
+      fees: 2.19,
+    },
+    {
+      id: "tx_123458",
+      customerId: "cust_003",
+      customerName: "Bob Johnson",
+      amount: 200.0,
+      currency: "USD",
+      status: "failed",
+      timestamp: new Date(Date.now() - 7200000).toISOString(),
+      paymentMethod: "Bank Transfer",
+      description: "Service payment",
+      fees: 0,
+    },
+  ]
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "completed":
+        return "bg-green-100 text-green-800"
+      case "pending":
+        return "bg-yellow-100 text-yellow-800"
+      case "failed":
+        return "bg-red-100 text-red-800"
+      case "refunded":
+        return "bg-gray-100 text-gray-800"
+      default:
+        return "bg-gray-100 text-gray-800"
+    }
   }
 
   const filteredTransactions = transactions.filter((transaction) => {
+    const searchLower = searchTerm.toLowerCase()
     const matchesSearch =
-      transaction.customer.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      transaction.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      transaction.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      transaction.id.toLowerCase().includes(searchTerm.toLowerCase())
-
+      !searchTerm ||
+      transaction.customerName.toLowerCase().includes(searchLower) ||
+      transaction.id.toLowerCase().includes(searchLower) ||
+      transaction.description.toLowerCase().includes(searchLower)
     const matchesStatus = statusFilter === "all" || transaction.status === statusFilter
-
     return matchesSearch && matchesStatus
   })
 
-  const totalRevenue = transactions.filter((t) => t.status === "completed").reduce((sum, t) => sum + t.amount, 0)
-  const totalFees = transactions.filter((t) => t.status === "completed").reduce((sum, t) => sum + t.fee, 0)
-  const netRevenue = totalRevenue - totalFees
+  const completedTransactions = transactions.filter((t) => t.status === "completed")
+  const totalRevenue = completedTransactions.reduce((sum, t) => sum + t.amount, 0)
+  const totalFees = completedTransactions.reduce((sum, t) => sum + t.fees, 0)
 
-  if (isLoading) {
+  if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
-      </div>
+      <DashboardLayout navigation={navigation} title="Transactions">
+        <div className="flex items-center justify-center h-64">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+            <p className="mt-2 text-gray-500">Loading transactions...</p>
+          </div>
+        </div>
+      </DashboardLayout>
     )
   }
 
   return (
-    <DashboardLayout navigation={navigation} title="Transaction Management">
+    <DashboardLayout navigation={navigation} title="Transactions">
       <div className="space-y-6">
-        {/* Summary Cards */}
+        {error && (
+          <div className="bg-red-50 border border-red-200 rounded-md p-4">
+            <p className="text-red-800">{error}</p>
+          </div>
+        )}
+
+        {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
           <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center space-x-4">
-                <div className="p-3 bg-green-100 rounded-lg">
-                  <DollarSign className="h-6 w-6 text-green-600" />
-                </div>
-                <div>
-                  <p className="text-sm text-gray-600">Total Revenue</p>
-                  <p className="text-2xl font-bold">${totalRevenue.toFixed(2)}</p>
-                </div>
-              </div>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
+              <CreditCard className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">${totalRevenue.toLocaleString()}</div>
+              <p className="text-xs text-muted-foreground">+12% from last month</p>
             </CardContent>
           </Card>
+
           <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center space-x-4">
-                <div className="p-3 bg-blue-100 rounded-lg">
-                  <TrendingUp className="h-6 w-6 text-blue-600" />
-                </div>
-                <div>
-                  <p className="text-sm text-gray-600">Net Revenue</p>
-                  <p className="text-2xl font-bold">${netRevenue.toFixed(2)}</p>
-                </div>
-              </div>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total Transactions</CardTitle>
+              <CreditCard className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{transactions.length}</div>
+              <p className="text-xs text-muted-foreground">+8% from last month</p>
             </CardContent>
           </Card>
+
           <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center space-x-4">
-                <div className="p-3 bg-purple-100 rounded-lg">
-                  <History className="h-6 w-6 text-purple-600" />
-                </div>
-                <div>
-                  <p className="text-sm text-gray-600">Total Transactions</p>
-                  <p className="text-2xl font-bold">{transactions.length}</p>
-                </div>
-              </div>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Processing Fees</CardTitle>
+              <CreditCard className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">${totalFees.toLocaleString()}</div>
+              <p className="text-xs text-muted-foreground">2.9% average rate</p>
             </CardContent>
           </Card>
+
           <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center space-x-4">
-                <div className="p-3 bg-orange-100 rounded-lg">
-                  <Users className="h-6 w-6 text-orange-600" />
-                </div>
-                <div>
-                  <p className="text-sm text-gray-600">Processing Fees</p>
-                  <p className="text-2xl font-bold">${totalFees.toFixed(2)}</p>
-                </div>
-              </div>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Success Rate</CardTitle>
+              <CreditCard className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">98.5%</div>
+              <p className="text-xs text-muted-foreground">+0.2% from last month</p>
             </CardContent>
           </Card>
         </div>
 
-        {/* Filters and Search */}
+        {/* Filters and Actions */}
         <Card>
           <CardHeader>
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
               <div>
-                <CardTitle>Transaction Management</CardTitle>
-                <CardDescription>Monitor and manage all payment transactions</CardDescription>
+                <CardTitle>Transaction History</CardTitle>
+                <CardDescription>View and manage all your transactions</CardDescription>
               </div>
-              <div className="flex space-x-2">
-                <Button variant="outline" size="sm">
-                  <RefreshCw className="h-4 w-4 mr-2" />
-                  Refresh
-                </Button>
+              <div className="flex gap-2">
                 <Button variant="outline" size="sm">
                   <Download className="h-4 w-4 mr-2" />
                   Export
+                </Button>
+                <Button variant="outline" size="sm" onClick={fetchTransactions}>
+                  <RefreshCw className="h-4 w-4 mr-2" />
+                  Refresh
                 </Button>
               </div>
             </div>
@@ -283,8 +241,8 @@ export default function MerchantTransactions() {
                 />
               </div>
               <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-full sm:w-40">
-                  <SelectValue placeholder="Status" />
+                <SelectTrigger className="w-full sm:w-[180px]">
+                  <SelectValue placeholder="Filter by status" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Status</SelectItem>
@@ -292,24 +250,12 @@ export default function MerchantTransactions() {
                   <SelectItem value="pending">Pending</SelectItem>
                   <SelectItem value="failed">Failed</SelectItem>
                   <SelectItem value="refunded">Refunded</SelectItem>
-                  <SelectItem value="disputed">Disputed</SelectItem>
-                </SelectContent>
-              </Select>
-              <Select value={dateFilter} onValueChange={setDateFilter}>
-                <SelectTrigger className="w-full sm:w-40">
-                  <SelectValue placeholder="Date Range" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Time</SelectItem>
-                  <SelectItem value="today">Today</SelectItem>
-                  <SelectItem value="week">This Week</SelectItem>
-                  <SelectItem value="month">This Month</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
             {/* Transactions Table */}
-            <div className="border rounded-lg">
+            <div className="rounded-md border">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -318,65 +264,39 @@ export default function MerchantTransactions() {
                     <TableHead>Amount</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Payment Method</TableHead>
-                    <TableHead>Fee</TableHead>
-                    <TableHead>Net Amount</TableHead>
-                    <TableHead>Date & Time</TableHead>
+                    <TableHead>Date</TableHead>
                     <TableHead>Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredTransactions.map((transaction) => (
-                    <TableRow key={transaction.id}>
-                      <TableCell>
-                        <div>
-                          <p className="font-mono text-sm">{transaction.id}</p>
-                          <p className="text-xs text-gray-500">{transaction.description}</p>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div>
-                          <p className="font-medium">{transaction.customerName}</p>
-                          <p className="text-sm text-gray-500">{transaction.customer}</p>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <span className="font-semibold">${transaction.amount.toFixed(2)}</span>
-                      </TableCell>
-                      <TableCell>{getStatusBadge(transaction.status)}</TableCell>
-                      <TableCell>
-                        <span className="text-sm">{transaction.paymentMethod}</span>
-                      </TableCell>
-                      <TableCell>
-                        <span className="text-sm">${transaction.fee.toFixed(2)}</span>
-                      </TableCell>
-                      <TableCell>
-                        <span className={`font-medium ${transaction.net >= 0 ? "text-green-600" : "text-red-600"}`}>
-                          ${transaction.net.toFixed(2)}
-                        </span>
-                      </TableCell>
-                      <TableCell>
-                        <div className="text-sm">
-                          <div>{transaction.date}</div>
-                          <div className="text-gray-500">{transaction.time}</div>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Button variant="ghost" size="sm">
-                          <Eye className="h-4 w-4" />
-                        </Button>
+                  {filteredTransactions.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={7} className="text-center py-8">
+                        No transactions found
                       </TableCell>
                     </TableRow>
-                  ))}
+                  ) : (
+                    filteredTransactions.map((transaction) => (
+                      <TableRow key={transaction.id}>
+                        <TableCell className="font-medium">{transaction.id}</TableCell>
+                        <TableCell>{transaction.customerName}</TableCell>
+                        <TableCell>${transaction.amount.toFixed(2)}</TableCell>
+                        <TableCell>
+                          <Badge className={getStatusColor(transaction.status)}>{transaction.status}</Badge>
+                        </TableCell>
+                        <TableCell>{transaction.paymentMethod}</TableCell>
+                        <TableCell>{new Date(transaction.timestamp).toLocaleDateString()}</TableCell>
+                        <TableCell>
+                          <Button variant="ghost" size="sm">
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
                 </TableBody>
               </Table>
             </div>
-
-            {filteredTransactions.length === 0 && (
-              <div className="text-center py-8">
-                <History className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <p className="text-gray-500">No transactions found matching your criteria</p>
-              </div>
-            )}
           </CardContent>
         </Card>
       </div>

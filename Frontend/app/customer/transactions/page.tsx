@@ -18,7 +18,7 @@ import {
   User,
   Search,
   Download,
-  ArrowUpRight,
+  Eye,
   ArrowDownRight,
   Calendar,
 } from "lucide-react"
@@ -53,8 +53,8 @@ export default function CustomerTransactions() {
       status: "completed",
       date: "2024-01-10",
       time: "14:32",
-      category: "Shopping",
       paymentMethod: "Visa ****4532",
+      category: "Shopping",
       description: "Online purchase - Electronics",
     },
     {
@@ -64,8 +64,8 @@ export default function CustomerTransactions() {
       status: "completed",
       date: "2024-01-09",
       time: "10:15",
-      category: "Entertainment",
       paymentMethod: "Mastercard ****8901",
+      category: "Entertainment",
       description: "Monthly subscription",
     },
     {
@@ -75,8 +75,8 @@ export default function CustomerTransactions() {
       status: "completed",
       date: "2024-01-09",
       time: "08:45",
-      category: "Food & Drink",
       paymentMethod: "Apple Pay",
+      category: "Food & Drink",
       description: "Coffee purchase",
     },
     {
@@ -86,53 +86,31 @@ export default function CustomerTransactions() {
       status: "completed",
       date: "2024-01-08",
       time: "18:20",
-      category: "Transportation",
       paymentMethod: "Visa ****4532",
+      category: "Transportation",
       description: "Ride to downtown",
     },
     {
       id: "TXN-005",
       merchant: "Spotify",
       amount: -9.99,
-      status: "completed",
+      status: "pending",
       date: "2024-01-08",
       time: "12:00",
-      category: "Entertainment",
       paymentMethod: "Mastercard ****8901",
+      category: "Entertainment",
       description: "Premium subscription",
     },
     {
       id: "TXN-006",
-      merchant: "Refund - Amazon",
-      amount: 45.99,
-      status: "completed",
+      merchant: "Gas Station",
+      amount: -45.67,
+      status: "failed",
       date: "2024-01-07",
       time: "16:30",
-      category: "Refund",
       paymentMethod: "Visa ****4532",
-      description: "Product return refund",
-    },
-    {
-      id: "TXN-007",
-      merchant: "Gas Station",
-      amount: -67.5,
-      status: "pending",
-      date: "2024-01-07",
-      time: "09:15",
       category: "Transportation",
-      paymentMethod: "Visa ****4532",
       description: "Fuel purchase",
-    },
-    {
-      id: "TXN-008",
-      merchant: "Online Store",
-      amount: -156.0,
-      status: "failed",
-      date: "2024-01-06",
-      time: "20:45",
-      category: "Shopping",
-      paymentMethod: "Mastercard ****8901",
-      description: "Payment declined - insufficient funds",
     },
   ]
 
@@ -151,7 +129,6 @@ export default function CustomerTransactions() {
       Entertainment: "bg-purple-100 text-purple-800",
       "Food & Drink": "bg-orange-100 text-orange-800",
       Transportation: "bg-green-100 text-green-800",
-      Refund: "bg-gray-100 text-gray-800",
     }
     return colors[category as keyof typeof colors] || "bg-gray-100 text-gray-800"
   }
@@ -187,25 +164,27 @@ export default function CustomerTransactions() {
                   <ArrowDownRight className="h-6 w-6 text-green-600" />
                 </div>
                 <div>
-                  <p className="text-sm text-gray-600">Total Spent</p>
+                  <p className="text-sm text-gray-500">Total Spent</p>
                   <p className="text-2xl font-bold">$2,847.50</p>
                 </div>
               </div>
             </CardContent>
           </Card>
+
           <Card>
             <CardContent className="p-6">
               <div className="flex items-center space-x-4">
                 <div className="p-3 bg-blue-100 rounded-lg">
-                  <History className="h-6 w-6 text-blue-600" />
+                  <CreditCard className="h-6 w-6 text-blue-600" />
                 </div>
                 <div>
-                  <p className="text-sm text-gray-600">Total Transactions</p>
+                  <p className="text-sm text-gray-500">Total Transactions</p>
                   <p className="text-2xl font-bold">47</p>
                 </div>
               </div>
             </CardContent>
           </Card>
+
           <Card>
             <CardContent className="p-6">
               <div className="flex items-center space-x-4">
@@ -213,7 +192,7 @@ export default function CustomerTransactions() {
                   <Calendar className="h-6 w-6 text-purple-600" />
                 </div>
                 <div>
-                  <p className="text-sm text-gray-600">This Month</p>
+                  <p className="text-sm text-gray-500">This Month</p>
                   <p className="text-2xl font-bold">$456.80</p>
                 </div>
               </div>
@@ -224,8 +203,16 @@ export default function CustomerTransactions() {
         {/* Filters and Search */}
         <Card>
           <CardHeader>
-            <CardTitle>Transaction History</CardTitle>
-            <CardDescription>View and manage your payment history</CardDescription>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
+              <div>
+                <CardTitle>Transaction History</CardTitle>
+                <CardDescription>View and manage your payment history</CardDescription>
+              </div>
+              <Button variant="outline">
+                <Download className="mr-2 h-4 w-4" />
+                Export
+              </Button>
+            </div>
           </CardHeader>
           <CardContent>
             <div className="flex flex-col sm:flex-row gap-4 mb-6">
@@ -251,7 +238,7 @@ export default function CustomerTransactions() {
               </Select>
               <Select value={dateFilter} onValueChange={setDateFilter}>
                 <SelectTrigger className="w-full sm:w-40">
-                  <SelectValue placeholder="Date Range" />
+                  <SelectValue placeholder="Date" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Time</SelectItem>
@@ -260,10 +247,6 @@ export default function CustomerTransactions() {
                   <SelectItem value="month">This Month</SelectItem>
                 </SelectContent>
               </Select>
-              <Button variant="outline">
-                <Download className="h-4 w-4 mr-2" />
-                Export
-              </Button>
             </div>
 
             {/* Transactions Table */}
@@ -272,55 +255,50 @@ export default function CustomerTransactions() {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Transaction</TableHead>
+                    <TableHead>Merchant</TableHead>
                     <TableHead>Amount</TableHead>
                     <TableHead>Status</TableHead>
-                    <TableHead>Category</TableHead>
+                    <TableHead>Date</TableHead>
                     <TableHead>Payment Method</TableHead>
-                    <TableHead>Date & Time</TableHead>
+                    <TableHead></TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {filteredTransactions.map((transaction) => (
                     <TableRow key={transaction.id}>
                       <TableCell>
-                        <div className="flex items-center space-x-3">
-                          <div
-                            className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                              transaction.amount < 0 ? "bg-red-100" : "bg-green-100"
-                            }`}
-                          >
-                            {transaction.amount < 0 ? (
-                              <ArrowUpRight className="h-5 w-5 text-red-600" />
-                            ) : (
-                              <ArrowDownRight className="h-5 w-5 text-green-600" />
-                            )}
-                          </div>
-                          <div>
-                            <p className="font-medium">{transaction.merchant}</p>
-                            <p className="text-sm text-gray-500">{transaction.description}</p>
-                            <p className="text-xs text-gray-400">{transaction.id}</p>
-                          </div>
+                        <div>
+                          <p className="font-medium">{transaction.id}</p>
+                          <p className="text-sm text-gray-500">{transaction.description}</p>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center space-x-2">
+                          <span className="font-medium">{transaction.merchant}</span>
+                          <Badge variant="secondary" className={getCategoryColor(transaction.category)}>
+                            {transaction.category}
+                          </Badge>
                         </div>
                       </TableCell>
                       <TableCell>
                         <span className={`font-semibold ${transaction.amount < 0 ? "text-red-600" : "text-green-600"}`}>
-                          {transaction.amount < 0 ? "-" : "+"}${Math.abs(transaction.amount).toFixed(2)}
+                          ${Math.abs(transaction.amount).toFixed(2)}
                         </span>
                       </TableCell>
                       <TableCell>{getStatusBadge(transaction.status)}</TableCell>
                       <TableCell>
-                        <Badge variant="secondary" className={getCategoryColor(transaction.category)}>
-                          {transaction.category}
-                        </Badge>
+                        <div>
+                          <p className="font-medium">{transaction.date}</p>
+                          <p className="text-sm text-gray-500">{transaction.time}</p>
+                        </div>
                       </TableCell>
                       <TableCell>
                         <span className="text-sm">{transaction.paymentMethod}</span>
                       </TableCell>
                       <TableCell>
-                        <div className="text-sm">
-                          <div>{transaction.date}</div>
-                          <div className="text-gray-500">{transaction.time}</div>
-                        </div>
+                        <Button variant="ghost" size="sm">
+                          <Eye className="h-4 w-4" />
+                        </Button>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -330,8 +308,7 @@ export default function CustomerTransactions() {
 
             {filteredTransactions.length === 0 && (
               <div className="text-center py-8">
-                <History className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <p className="text-gray-500">No transactions found matching your criteria</p>
+                <p className="text-gray-500">No transactions found matching your criteria.</p>
               </div>
             )}
           </CardContent>
