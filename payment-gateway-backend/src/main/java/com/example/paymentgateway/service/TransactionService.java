@@ -1,14 +1,10 @@
-import com.example.paymentgateway.kafka.KafkaCompensationProducerService;
-    @Autowired
-    private KafkaCompensationProducerService kafkaCompensationProducerService;
-import com.example.paymentgateway.kafka.KafkaSagaProducerService;
-    @Autowired
-    private KafkaSagaProducerService kafkaSagaProducerService;
-import com.example.paymentgateway.kafka.KafkaProducerService;
-    @Autowired
-    private KafkaProducerService kafkaProducerService;
+
 package com.example.paymentgateway.service;
 
+
+import com.example.paymentgateway.kafka.KafkaCompensationProducerService;
+import com.example.paymentgateway.kafka.KafkaSagaProducerService;
+import com.example.paymentgateway.kafka.KafkaProducerService;
 import com.example.paymentgateway.model.Transaction;
 import com.example.paymentgateway.model.User;
 import com.example.paymentgateway.repository.TransactionRepository;
@@ -16,7 +12,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.scheduling.annotation.Async;
-
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -24,6 +19,13 @@ import java.util.List;
 public class TransactionService {
     @Autowired
     private TransactionRepository transactionRepository;
+
+    @Autowired
+    private KafkaProducerService kafkaProducerService;
+    @Autowired
+    private KafkaSagaProducerService kafkaSagaProducerService;
+    @Autowired
+    private KafkaCompensationProducerService kafkaCompensationProducerService;
 
     @Transactional
     @Async

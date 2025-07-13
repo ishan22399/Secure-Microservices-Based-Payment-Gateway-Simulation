@@ -22,7 +22,7 @@ public class RateLimitingFilter extends OncePerRequestFilter {
         if (apiBucket.tryConsume(1)) {
             filterChain.doFilter(request, response);
         } else {
-            response.setStatus(HttpServletResponse.SC_TOO_MANY_REQUESTS);
+            response.setStatus(429); // 429 Too Many Requests
             response.getWriter().write("Too many requests");
         }
     }

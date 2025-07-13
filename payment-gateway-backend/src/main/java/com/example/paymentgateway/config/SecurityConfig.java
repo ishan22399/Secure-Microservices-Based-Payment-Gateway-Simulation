@@ -1,6 +1,8 @@
+
+package com.example.paymentgateway.config;
+
 import com.example.paymentgateway.filter.RateLimitingFilter;
 import org.springframework.boot.actuate.autoconfigure.security.servlet.EndpointRequest;
-package com.example.paymentgateway.config;
 
 import com.example.paymentgateway.security.JwtAuthenticationFilter;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -47,8 +49,7 @@ public class SecurityConfig {
             .addFilterBefore(rateLimitingFilter, JwtAuthenticationFilter.class)
             .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
             .headers(headers -> headers
-                .contentSecurityPolicy("default-src 'self'")
-                .frameOptions().sameOrigin()
+                .frameOptions(frame -> frame.sameOrigin())
             );
         return http.build();
     }

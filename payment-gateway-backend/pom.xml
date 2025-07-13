@@ -37,10 +37,18 @@
             <artifactId>micrometer-registry-prometheus</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.github.bucket4j</groupId>
+            <groupId>com.github.vladimir-bukhtoyarov</groupId>
             <artifactId>bucket4j-core</artifactId>
-            <version>8.10.1</version>
+            <version>7.6.0</version>
         </dependency>
+        <!-- If you need Spring Boot integration for Bucket4j, add the starter below (optional) -->
+        <!--
+        <dependency>
+            <groupId>com.github.vladimir-bukhtoyarov</groupId>
+            <artifactId>bucket4j-spring-boot-starter</artifactId>
+            <version>7.6.0</version>
+        </dependency>
+        -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-security</artifactId>

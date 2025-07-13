@@ -1,5 +1,7 @@
-import com.example.paymentgateway.security.JwtBlacklist;
+
 package com.example.paymentgateway.controller;
+
+import com.example.paymentgateway.security.JwtBlacklist;
 
 import com.example.paymentgateway.model.AuthRequest;
 import com.example.paymentgateway.model.AuthResponse;
