@@ -4,7 +4,6 @@ package com.example.paymentgateway.config;
 import com.example.paymentgateway.filter.RateLimitingFilter;
 import org.springframework.boot.actuate.autoconfigure.security.servlet.EndpointRequest;
 
-import com.example.paymentgateway.security.JwtAuthenticationFilter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -21,8 +20,6 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
-    @Autowired
-    private JwtAuthenticationFilter jwtAuthenticationFilter;
     @Autowired
     private RateLimitingFilter rateLimitingFilter;
 
@@ -46,8 +43,7 @@ public class SecurityConfig {
                 .requestMatchers(EndpointRequest.toAnyEndpoint()).permitAll() // actuator endpoints
                 .anyRequest().authenticated()
             )
-            .addFilterBefore(rateLimitingFilter, JwtAuthenticationFilter.class)
-            .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+            .addFilterBefore(rateLimitingFilter, UsernamePasswordAuthenticationFilter.class)
             .headers(headers -> headers
                 .frameOptions(frame -> frame.sameOrigin())
             );

@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Select } from "@/components/ui/select"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
@@ -257,27 +257,25 @@ export default function AdminUsers() {
                   className="pl-10"
                 />
               </div>
-              <Select value={roleFilter} onValueChange={setRoleFilter}>
-                <SelectTrigger className="w-full sm:w-40">
-                  <SelectValue placeholder="Role" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Roles</SelectItem>
-                  <SelectItem value="customer">Customer</SelectItem>
-                  <SelectItem value="merchant">Merchant</SelectItem>
-                  <SelectItem value="bank_admin">Admin</SelectItem>
-                </SelectContent>
+              <Select
+                value={roleFilter}
+                onChange={e => setRoleFilter(e.target.value)}
+                className="w-full sm:w-40"
+              >
+                <option value="all">All Roles</option>
+                <option value="customer">Customer</option>
+                <option value="merchant">Merchant</option>
+                <option value="bank_admin">Admin</option>
               </Select>
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-full sm:w-40">
-                  <SelectValue placeholder="Status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Status</SelectItem>
-                  <SelectItem value="active">Active</SelectItem>
-                  <SelectItem value="suspended">Suspended</SelectItem>
-                  <SelectItem value="pending">Pending</SelectItem>
-                </SelectContent>
+              <Select
+                value={statusFilter}
+                onChange={e => setStatusFilter(e.target.value)}
+                className="w-full sm:w-40"
+              >
+                <option value="all">All Status</option>
+                <option value="active">Active</option>
+                <option value="suspended">Suspended</option>
+                <option value="pending">Pending</option>
               </Select>
             </div>
 
@@ -333,7 +331,7 @@ export default function AdminUsers() {
                       </TableCell>
                       <TableCell>
                         <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
+                          <DropdownMenuTrigger>
                             <Button variant="ghost" size="sm">
                               <MoreHorizontal className="h-4 w-4" />
                             </Button>
