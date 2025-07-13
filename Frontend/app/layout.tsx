@@ -11,7 +11,6 @@ const inter = Inter({ subsets: ["latin"] })
 export const metadata: Metadata = {
   title: "SecurePay Gateway - Enterprise Payment Solution",
   description: "Secure microservices-based payment gateway with multi-role authentication",
-    generator: 'v0.dev'
 }
 
 export default function RootLayout({
