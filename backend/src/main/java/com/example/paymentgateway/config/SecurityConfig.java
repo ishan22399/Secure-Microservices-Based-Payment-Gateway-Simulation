@@ -39,7 +39,8 @@ public class SecurityConfig {
             .csrf(csrf -> csrf.disable())
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/api/auth/**", "/swagger-ui.html", "/api-docs/**").permitAll()
+                .requestMatchers("/api/auth/register", "/api/auth/login", "/swagger-ui.html", "/api-docs/**").permitAll()
+                .requestMatchers("/api/auth/**").permitAll()
                 .requestMatchers(EndpointRequest.toAnyEndpoint()).permitAll() // actuator endpoints
                 .anyRequest().authenticated()
             )
@@ -47,6 +48,7 @@ public class SecurityConfig {
             .headers(headers -> headers
                 .frameOptions(frame -> frame.sameOrigin())
             );
+        System.out.println("[SECURITY DEBUG] SecurityFilterChain configured: /api/auth/register is permitAll");
         return http.build();
     }
 }

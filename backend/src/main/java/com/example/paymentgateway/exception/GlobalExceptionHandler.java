@@ -31,8 +31,10 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(Exception.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     public ResponseEntity<?> handleAllExceptions(Exception ex, WebRequest request) {
-        Map<String, String> error = new HashMap<>();
-        error.put("error", ex.getMessage());
+        Map<String, Object> error = new HashMap<>();
+        error.put("error", ex.getClass().getSimpleName());
+        error.put("message", ex.getMessage());
+        error.put("path", request.getDescription(false));
         return new ResponseEntity<>(error, HttpStatus.INTERNAL_SERVER_ERROR);
     }
 }

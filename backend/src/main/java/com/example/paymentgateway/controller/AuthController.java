@@ -1,5 +1,6 @@
-
 package com.example.paymentgateway.controller;
+
+import jakarta.servlet.http.HttpServletRequest;
 
 import com.example.paymentgateway.security.JwtBlacklist;
 
@@ -44,15 +45,29 @@ public class AuthController {
     }
 
     @PostMapping("/register")
-    public ResponseEntity<?> register(@RequestBody User user) {
-        if (userService.existsByUsername(user.getUsername())) {
-            return ResponseEntity.badRequest().body("Username already exists");
+    public ResponseEntity<?> register(@RequestBody User user, HttpServletRequest request) {
+        System.out.println("[DEBUG] /api/auth/register called");
+        System.out.println("[DEBUG] Request method: " + request.getMethod());
+        System.out.println("[DEBUG] Request URI: " + request.getRequestURI());
+        System.out.println("[DEBUG] Request Content-Type: " + request.getContentType());
+        System.out.println("[DEBUG] User received: " + user);
+        try {
+            if (userService.existsByUsername(user.getUsername())) {
+                System.out.println("[DEBUG] Username already exists: " + user.getUsername());
+                return ResponseEntity.badRequest().body("Username already exists");
+            }
+            if (userService.existsByEmail(user.getEmail())) {
+                System.out.println("[DEBUG] Email already exists: " + user.getEmail());
+                return ResponseEntity.badRequest().body("Email already exists");
+            }
+            User saved = userService.registerUser(user);
+            System.out.println("[DEBUG] User registered successfully: " + saved);
+            return ResponseEntity.ok(saved);
+        } catch (Exception e) {
+            System.out.println("[DEBUG] Exception in register: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(500).body("Registration error: " + e.getMessage());
         }
-        if (userService.existsByEmail(user.getEmail())) {
-            return ResponseEntity.badRequest().body("Email already exists");
-        }
-        User saved = userService.registerUser(user);
-        return ResponseEntity.ok(saved);
     }
 
     @PostMapping("/login")
